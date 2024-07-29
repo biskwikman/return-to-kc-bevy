@@ -25,6 +25,17 @@ fn main() {
 #[derive(Component)]
 struct AnimateTranslation;
 
+#[derive(Component)]
+struct Tile {
+    column: u8,
+    row: u8,
+    center: 
+}
+
+// fn input(keys: Res<ButtonInput<KeyCode>>) {
+//     if keys.just_pressed(KeyCode::KeyK) {}
+// }
+
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut query: Query<&Window>) {
     let window = query.single();
     let font = asset_server.load("fonts/Mx437_IBM_BIOS.ttf");
@@ -39,12 +50,19 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut query: Quer
 
     commands.spawn(Camera2dBundle::default());
 
-    for mut y in (-295..(window.resolution.height() / 2.0) as i32).step_by(10) {
-        commands.spawn(Text2dBundle {
-            text: Text::from_section('@', text_style.clone()).with_justify(text_justification),
-            transform: Transform::from_xyz(0.0, y as f32, 1.0),
-            ..default()
-        });
+    let y_max = window.resolution.height() / 2.0;
+    let y_min = window.resolution.height() / -2.0 + font_size / 2.0;
+    let x_max = window.resolution.width() / 2.0;
+    let x_min = window.resolution.width() / -2.0 + font_size / 2.0;
+
+    for y in (y_min as i32..y_max as i32).step_by(font_size as usize) {
+        for x in (x_min as i32..x_max as i32).step_by(font_size as usize) {
+            commands.spawn(Text2dBundle {
+                text: Text::from_section('@', text_style.clone()).with_justify(text_justification),
+                transform: Transform::from_xyz(x as f32, y as f32, 1.0),
+                ..default()
+            });
+        }
     }
 }
 
