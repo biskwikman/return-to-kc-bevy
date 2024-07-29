@@ -27,9 +27,10 @@ struct AnimateTranslation;
 
 #[derive(Component)]
 struct Tile {
-    column: u8,
-    row: u8,
-    center: 
+    column: usize,
+    row: usize,
+    center: (f32, f32),
+    text: Option<Text2dBundle>,
 }
 
 // fn input(keys: Res<ButtonInput<KeyCode>>) {
@@ -55,8 +56,19 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut query: Quer
     let x_max = window.resolution.width() / 2.0;
     let x_min = window.resolution.width() / -2.0 + font_size / 2.0;
 
-    for y in (y_min as i32..y_max as i32).step_by(font_size as usize) {
-        for x in (x_min as i32..x_max as i32).step_by(font_size as usize) {
+    for (iy, y) in (y_min as i32..y_max as i32)
+        .step_by(font_size as usize)
+        .enumerate()
+    {
+        for (ix, x) in (x_min as i32..x_max as i32)
+            .step_by(font_size as usize)
+            .enumerate()
+        {
+            commands.spawn(Tile {
+                center: (x as f32, y as f32),
+                column: iy,
+                row: ix,
+            },
             commands.spawn(Text2dBundle {
                 text: Text::from_section('@', text_style.clone()).with_justify(text_justification),
                 transform: Transform::from_xyz(x as f32, y as f32, 1.0),
