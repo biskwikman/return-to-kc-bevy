@@ -19,38 +19,39 @@ fn main() {
         }))
         .add_systems(Startup, setup)
         .add_systems(PostStartup, add_player)
-        .add_systems(Update, animate_translation)
+        .add_systems(Update, move_player)
         .run();
 }
 
-#[derive(Component)]
-struct AnimateTranslation;
-
-#[derive(Component)]
+#[derive(Component, Debug)]
 struct Tile {
     y: usize,
     x: usize,
     center: (f32, f32),
     idx: usize,
+    player: PlayerZone,
+}
+
+#[derive(Debug, PartialEq)]
+enum PlayerZone {
+    Player,
+    PlayerTop,
+    PlayerBottom,
+    PlayerLeft,
+    PlayerRight,
+    Outside,
 }
 
 #[derive(Component)]
-struct Player;
+struct Player {
+    y: usize,
+    x: usize,
+    center: (f32, f32),
+}
 
-// fn input(keys: Res<ButtonInput<KeyCode>>) {
-//     if keys.just_pressed(KeyCode::KeyK) {}
-// }
-
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>, query_window: Query<&Window>) {
+fn setup(mut commands: Commands, query_window: Query<&Window>) {
     let window = query_window.single();
-    let font = asset_server.load("fonts/Mx437_IBM_BIOS.ttf");
     let font_size = 10.0;
-    let text_style = TextStyle {
-        font: font.clone(),
-        font_size,
-        ..default()
-    };
-    let text_justification = JustifyText::Center;
 
     commands.spawn(Camera2dBundle::default());
 
@@ -72,12 +73,17 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, query_window: Q
                 y: iy,
                 x: ix,
                 idx,
+                player: PlayerZone::Outside,
             });
         }
     }
 }
 
-fn add_player(mut commands: Commands, query_tiles: Query<&Tile>, asset_server: Res<AssetServer>) {
+fn add_player(
+    mut commands: Commands,
+    mut query_tiles: Query<&mut Tile>,
+    asset_server: Res<AssetServer>,
+) {
     let font = asset_server.load("fonts/Mx437_IBM_BIOS.ttf");
     let font_size = 10.0;
     let text_style = TextStyle {
@@ -86,22 +92,52 @@ fn add_player(mut commands: Commands, query_tiles: Query<&Tile>, asset_server: R
         ..default()
     };
     let text_justification = JustifyText::Center;
-    for tile in query_tiles.iter() {
-        println!("test");
-        commands.spawn(Text2dBundle {
-            text: Text::from_section('@', text_style.clone()).with_justify(text_justification),
-            transform: Transform::from_xyz(tile.center.0, tile.center.1, 1.0),
-            ..default()
-        });
+    for mut tile in &mut query_tiles {
+        if tile.y == 30 && tile.x == 20 {
+            tile.player = PlayerZone::Player;
+            commands.spawn((
+                Text2dBundle {
+                    text: Text::from_section('@', text_style.clone())
+                        .with_justify(text_justification),
+                    transform: Transform::from_xyz(tile.center.0, tile.center.1, 1.0),
+                    ..default()
+                },
+                Player {
+                    y: tile.y,
+                    x: tile.x,
+                    center: tile.center,
+                },
+            ));
+        } else if tile.y == 30 && tile.x == 21 {
+            tile.player = PlayerZone::PlayerTop
+        }
     }
 }
 
-fn animate_translation(
-    time: Res<Time>,
-    mut query: Query<&mut Transform, (With<Text>, With<AnimateTranslation>)>,
+fn move_player(
+    keys: Res<ButtonInput<KeyCode>>,
+    mut query_player: Query<(&mut Transform, &mut Player)>,
+    mut query_tiles: Query<&mut Tile>,
 ) {
-    // for mut transform in &mut query {
-    //     transform.translation.x = 100.0 * time.elapsed_seconds().sin() - 400.0;
-    //     transform.translation.y = 100.0 * time.elapsed_seconds().cos();
-    // }
+    let (mut player_transform, mut player) = query_player.single_mut();
+    println!("player y {}", player.y);
+
+    for tile in query_tiles.iter() {
+        if tile.x == player.x && tile.y == player.y + 1 {
+            println!("tile y {}", tile.y);
+            if keys.just_pressed(KeyCode::KeyK) {
+                player_transform.translation.y = tile.center.1;
+                player.y = tile.y;
+                break;
+            }
+        }
+    }
+
+    for mut tile in query_tiles.iter_mut() {
+        if tile.x == player.x && tile.y == player.y {
+            tile.player = PlayerZone::Player;
+        } else if tile.x == player.x && tile.y == player.y + 1 {
+            tile.player = PlayerZone::PlayerTop;
+        }
+    }
 }
