@@ -1,11 +1,4 @@
-use bevy::{
-    color::palettes::css::*,
-    prelude::*,
-    reflect::DynamicTypePath,
-    sprite::Anchor,
-    text::{BreakLineOn, Text2dBounds},
-    window::WindowResolution,
-};
+use bevy::{prelude::*, window::WindowResolution};
 
 fn main() {
     let window_resolution = WindowResolution::new(800.0, 600.0);
@@ -17,11 +10,16 @@ fn main() {
             }),
             ..default()
         }))
-        .add_systems(Startup, setup)
-        .add_systems(PostStartup, add_player)
+        .init_resource::<Map>()
+        .add_systems(PreStartup, setup)
+        .add_systems(Startup, add_player)
+        .add_systems(PostStartup, create_map)
         .add_systems(Update, move_player)
         .run();
 }
+
+#[derive(Resource, Default)]
+struct Map(Vec<Entity>);
 
 #[derive(Component, Debug)]
 struct Tile {
@@ -82,10 +80,17 @@ fn setup(mut commands: Commands, query_window: Query<&Window>) {
     }
 }
 
+fn create_map(query: Query<Entity, With<Tile>>, mut map: ResMut<Map>) {
+    for ent in query.iter() {
+        map.0.push(ent);
+    }
+}
+
 fn add_player(
     mut commands: Commands,
     mut query_tiles: Query<(&mut Tile, &Position, &Transform)>,
     asset_server: Res<AssetServer>,
+    map: ResMut<Map>,
 ) {
     let player_spawn_x = 20;
     let player_spawn_y = 30;
@@ -127,6 +132,8 @@ fn add_player(
             tile.zone = PlayerZone::PlayerRight;
         }
     }
+    // Need to get entity's components from it's index in map. dont know how yet
+    // map.0[80 * player_spawn_y + player_spawn_x].i
 }
 
 fn move_player(
@@ -135,11 +142,6 @@ fn move_player(
     mut query_tiles: Query<(&mut Tile, &Position, &Transform), Without<Player>>,
 ) {
     let (mut player_transform, player, mut player_position) = query_player.single_mut();
-    println!("player x, y: {}, {}", player_position.x, player_position.y);
-    println!(
-        "player transform location: {}, {}",
-        player_transform.translation.x, player_transform.translation.y
-    );
 
     for (mut tile, tile_position, tile_transform) in query_tiles.iter_mut() {
         if tile.zone == PlayerZone::PlayerTop {
