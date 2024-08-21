@@ -61,7 +61,8 @@ fn setup(mut commands: Commands, query_window: Query<&Window>) {
     let x_max = window.resolution.width() / 2.0;
     let x_min = window.resolution.width() / -2.0 + font_size / 2.0;
     let x_range = (x_min as i32..x_max as i32).step_by(font_size as usize);
-    // let width = x_range.len();
+    let width = x_range.len();
+    println!("{width}");
 
     for (iy, y) in (y_min as i32..y_max as i32)
         .step_by(font_size as usize)
@@ -84,7 +85,7 @@ fn setup(mut commands: Commands, query_window: Query<&Window>) {
 }
 
 fn get_tile_idx(idx_xy: (usize, usize)) -> usize {
-    (idx_xy.1 as i32 * 80 - 80 + idx_xy.0 as i32 - 1) as usize
+    idx_xy.0 + 80 * idx_xy.1
 }
 
 fn create_map(query: Query<Entity, With<Tile>>, mut map: ResMut<Map>) {
@@ -133,18 +134,18 @@ fn set_player_zones(
             .zone = PlayerZone::PlayerTop;
     }
 
-    println!(
-        "PlayerLeft {}",
-        get_tile_idx((player_pos.x - 1, player_pos.y))
-    );
-    println!(
-        "PlayerRight {}",
-        get_tile_idx((player_pos.x + 1, player_pos.y))
-    );
-    println!(
-        "PlayerBottom {}",
-        get_tile_idx((player_pos.x, player_pos.y - 1))
-    );
+    // println!(
+    //     "PlayerLeft {}",
+    //     get_tile_idx((player_pos.x - 1, player_pos.y))
+    // );
+    // println!(
+    //     "PlayerRight {}",
+    //     get_tile_idx((player_pos.x + 1, player_pos.y))
+    // );
+    // println!(
+    //     "PlayerBottom {}",
+    //     get_tile_idx((player_pos.x, player_pos.y - 1))
+    // );
 }
 
 fn add_player(
@@ -208,16 +209,16 @@ fn move_player(
                 if keys.just_pressed(KeyCode::KeyK) {
                     player_transform.translation.y = tile_transform.translation.y;
                     player_position.y = tile_position.y;
-                    tile.zone = PlayerZone::Player;
+                    // tile.zone = PlayerZone::Player;
                     break;
                 }
             }
             PlayerZone::PlayerBottom => {
-                println!("bottom tile: {}, {}", tile_position.x, tile_position.y);
+                // println!("bottom tile: {}, {}", tile_position.x, tile_position.y);
                 if keys.just_pressed(KeyCode::KeyJ) {
                     player_transform.translation.y = tile_transform.translation.y;
                     player_position.y = tile_position.y;
-                    tile.zone = PlayerZone::Player;
+                    // tile.zone = PlayerZone::Player;
                     break;
                 }
             }
@@ -225,7 +226,7 @@ fn move_player(
                 if keys.just_pressed(KeyCode::KeyH) {
                     player_transform.translation.x = tile_transform.translation.x;
                     player_position.x = tile_position.x;
-                    tile.zone = PlayerZone::Player;
+                    // tile.zone = PlayerZone::Player;
                     break;
                 }
             }
@@ -233,10 +234,13 @@ fn move_player(
                 if keys.just_pressed(KeyCode::KeyL) {
                     player_transform.translation.x = tile_transform.translation.x;
                     player_position.x = tile_position.x;
-                    tile.zone = PlayerZone::Player;
+                    // tile.zone = PlayerZone::Player;
                     break;
                 }
             }
+            // PlayerZone::Player => {
+            //     println!("Player Pos {}, {}", tile_position.x, tile_position.y);
+            // }
             _ => {}
         }
     }
@@ -247,6 +251,7 @@ fn move_player(
             PlayerZone::PlayerBottom => tile.zone = PlayerZone::Outside,
             PlayerZone::PlayerLeft => tile.zone = PlayerZone::Outside,
             PlayerZone::PlayerRight => tile.zone = PlayerZone::Outside,
+            PlayerZone::Player => tile.zone = PlayerZone::Outside,
             _ => {}
         }
     }
