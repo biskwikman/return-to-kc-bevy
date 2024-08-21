@@ -84,8 +84,6 @@ fn setup(mut commands: Commands, query_window: Query<&Window>) {
 }
 
 fn get_tile_idx(idx_xy: (usize, usize)) -> usize {
-    println!("{:?}", idx_xy);
-    println!("{}", idx_xy.1 as i32 * 80 - 80 + idx_xy.0 as i32 - 1);
     (idx_xy.1 as i32 * 80 - 80 + idx_xy.0 as i32 - 1) as usize
 }
 
@@ -96,11 +94,13 @@ fn create_map(query: Query<Entity, With<Tile>>, mut map: ResMut<Map>) {
 }
 
 fn set_player_zones(
+    mut commands: Commands,
     map: ResMut<Map>,
     mut query_tiles: Query<&mut Tile>,
     mut query_player_pos: Query<&Position, With<Player>>,
 ) {
     let player_pos = query_player_pos.single_mut();
+    println!("player pos {}, {}", player_pos.x, player_pos.y);
     println!("player pos {}", get_tile_idx((player_pos.x, player_pos.y)));
 
     query_tiles
@@ -136,7 +136,15 @@ fn set_player_zones(
     println!(
         "PlayerLeft {}",
         get_tile_idx((player_pos.x - 1, player_pos.y))
-    )
+    );
+    println!(
+        "PlayerRight {}",
+        get_tile_idx((player_pos.x + 1, player_pos.y))
+    );
+    println!(
+        "PlayerBottom {}",
+        get_tile_idx((player_pos.x, player_pos.y - 1))
+    );
 }
 
 fn add_player(
@@ -185,26 +193,6 @@ fn add_player(
         //     tile.zone = PlayerZone::PlayerRight;
         // }
     }
-    // query_tiles
-    //     .get_mut(map.tiles[get_tile_idx((player_spawn_x, player_spawn_y + 1))])
-    //     .unwrap()
-    //     .0
-    //     .zone = PlayerZone::PlayerTop;
-    // query_tiles
-    //     .get_mut(map.tiles[get_tile_idx((player_spawn_x, player_spawn_y - 1))])
-    //     .unwrap()
-    //     .0
-    //     .zone = PlayerZone::PlayerBottom;
-    // query_tiles
-    //     .get_mut(map.tiles[get_tile_idx((player_spawn_x + 1, player_spawn_y))])
-    //     .unwrap()
-    //     .0
-    //     .zone = PlayerZone::PlayerRight;
-    // query_tiles
-    //     .get_mut(map.tiles[get_tile_idx((player_spawn_x - 1, player_spawn_y))])
-    //     .unwrap()
-    //     .0
-    //     .zone = PlayerZone::PlayerLeft;
 }
 
 fn move_player(
@@ -225,6 +213,7 @@ fn move_player(
                 }
             }
             PlayerZone::PlayerBottom => {
+                println!("bottom tile: {}, {}", tile_position.x, tile_position.y);
                 if keys.just_pressed(KeyCode::KeyJ) {
                     player_transform.translation.y = tile_transform.translation.y;
                     player_position.y = tile_position.y;
