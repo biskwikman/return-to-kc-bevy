@@ -12,18 +12,22 @@ fn main() {
         }))
         .init_resource::<Map>()
         .add_systems(PreStartup, setup)
-        .add_systems(Startup, add_player)
-        .add_systems(PostStartup, create_map)
-        .add_systems(Update, move_player)
+        .add_systems(Startup, create_map)
+        .add_systems(
+            PostStartup,
+            (add_player, set_player_zones.after(add_player)),
+        )
+        .add_systems(Update, (move_player, set_player_zones.after(move_player)))
         .run();
 }
 
 #[derive(Resource, Default)]
-struct Map(Vec<Entity>);
+struct Map {
+    tiles: Vec<Entity>,
+}
 
 #[derive(Component, Debug)]
 struct Tile {
-    idx: usize,
     zone: PlayerZone,
 }
 
@@ -33,7 +37,7 @@ struct Position {
     y: usize,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum PlayerZone {
     Player,
     PlayerTop,
@@ -57,17 +61,16 @@ fn setup(mut commands: Commands, query_window: Query<&Window>) {
     let x_max = window.resolution.width() / 2.0;
     let x_min = window.resolution.width() / -2.0 + font_size / 2.0;
     let x_range = (x_min as i32..x_max as i32).step_by(font_size as usize);
-    let width = x_range.len();
+    // let width = x_range.len();
 
     for (iy, y) in (y_min as i32..y_max as i32)
         .step_by(font_size as usize)
         .enumerate()
     {
         for (ix, x) in x_range.clone().enumerate() {
-            let idx = ix + width * iy;
+            // let idx = ix + width * iy;
             commands.spawn((
                 Tile {
-                    idx,
                     zone: PlayerZone::Outside,
                 },
                 Position { x: ix, y: iy },
@@ -80,20 +83,69 @@ fn setup(mut commands: Commands, query_window: Query<&Window>) {
     }
 }
 
+fn get_tile_idx(idx_xy: (usize, usize)) -> usize {
+    println!("{:?}", idx_xy);
+    println!("{}", idx_xy.1 as i32 * 80 - 80 + idx_xy.0 as i32 - 1);
+    (idx_xy.1 as i32 * 80 - 80 + idx_xy.0 as i32 - 1) as usize
+}
+
 fn create_map(query: Query<Entity, With<Tile>>, mut map: ResMut<Map>) {
     for ent in query.iter() {
-        map.0.push(ent);
+        map.tiles.push(ent);
     }
+}
+
+fn set_player_zones(
+    map: ResMut<Map>,
+    mut query_tiles: Query<&mut Tile>,
+    mut query_player_pos: Query<&Position, With<Player>>,
+) {
+    let player_pos = query_player_pos.single_mut();
+    println!("player pos {}", get_tile_idx((player_pos.x, player_pos.y)));
+
+    query_tiles
+        .get_mut(map.tiles[get_tile_idx((player_pos.x, player_pos.y))])
+        .unwrap()
+        .zone = PlayerZone::Player;
+
+    if player_pos.x > 1 {
+        query_tiles
+            .get_mut(map.tiles[get_tile_idx((player_pos.x - 1, player_pos.y))])
+            .unwrap()
+            .zone = PlayerZone::PlayerLeft;
+    }
+    if player_pos.x < 80 {
+        query_tiles
+            .get_mut(map.tiles[get_tile_idx((player_pos.x + 1, player_pos.y))])
+            .unwrap()
+            .zone = PlayerZone::PlayerRight;
+    }
+    if player_pos.y > 1 {
+        query_tiles
+            .get_mut(map.tiles[get_tile_idx((player_pos.x, player_pos.y - 1))])
+            .unwrap()
+            .zone = PlayerZone::PlayerBottom;
+    }
+    if player_pos.y < 60 {
+        query_tiles
+            .get_mut(map.tiles[get_tile_idx((player_pos.x, player_pos.y + 1))])
+            .unwrap()
+            .zone = PlayerZone::PlayerTop;
+    }
+
+    println!(
+        "PlayerLeft {}",
+        get_tile_idx((player_pos.x - 1, player_pos.y))
+    )
 }
 
 fn add_player(
     mut commands: Commands,
     mut query_tiles: Query<(&mut Tile, &Position, &Transform)>,
     asset_server: Res<AssetServer>,
-    map: ResMut<Map>,
 ) {
-    let player_spawn_x = 20;
-    let player_spawn_y = 30;
+    let player_spawn_x = 10;
+    let player_spawn_y = 10;
     let font = asset_server.load("fonts/Mx437_IBM_BIOS.ttf");
     let font_size = 10.0;
     let text_style = TextStyle {
@@ -104,7 +156,7 @@ fn add_player(
     let text_justification = JustifyText::Center;
     for (mut tile, position, transform) in &mut query_tiles {
         if position.y == player_spawn_y && position.x == player_spawn_x {
-            tile.zone = PlayerZone::Player;
+            // tile.zone = PlayerZone::Player;
             commands.spawn((
                 Text2dBundle {
                     text: Text::from_section('@', text_style.clone())
@@ -122,86 +174,106 @@ fn add_player(
                     y: position.y,
                 },
             ));
-        } else if position.y == player_spawn_y + 1 && position.x == player_spawn_x {
-            tile.zone = PlayerZone::PlayerTop;
-        } else if position.y == player_spawn_y - 1 && position.x == player_spawn_x {
-            tile.zone = PlayerZone::PlayerBottom;
-        } else if position.y == player_spawn_y && position.x == player_spawn_x - 1 {
-            tile.zone = PlayerZone::PlayerLeft;
-        } else if position.y == player_spawn_y && position.x == player_spawn_x + 1 {
-            tile.zone = PlayerZone::PlayerRight;
         }
+        // else if position.y == player_spawn_y + 1 && position.x == player_spawn_x {
+        //     tile.zone = PlayerZone::PlayerTop;
+        // } else if position.y == player_spawn_y - 1 && position.x == player_spawn_x {
+        //     tile.zone = PlayerZone::PlayerBottom;
+        // } else if position.y == player_spawn_y && position.x == player_spawn_x - 1 {
+        //     tile.zone = PlayerZone::PlayerLeft;
+        // } else if position.y == player_spawn_y && position.x == player_spawn_x + 1 {
+        //     tile.zone = PlayerZone::PlayerRight;
+        // }
     }
-    // Need to get entity's components from it's index in map. dont know how yet
-    // map.0[80 * player_spawn_y + player_spawn_x].i
+    // query_tiles
+    //     .get_mut(map.tiles[get_tile_idx((player_spawn_x, player_spawn_y + 1))])
+    //     .unwrap()
+    //     .0
+    //     .zone = PlayerZone::PlayerTop;
+    // query_tiles
+    //     .get_mut(map.tiles[get_tile_idx((player_spawn_x, player_spawn_y - 1))])
+    //     .unwrap()
+    //     .0
+    //     .zone = PlayerZone::PlayerBottom;
+    // query_tiles
+    //     .get_mut(map.tiles[get_tile_idx((player_spawn_x + 1, player_spawn_y))])
+    //     .unwrap()
+    //     .0
+    //     .zone = PlayerZone::PlayerRight;
+    // query_tiles
+    //     .get_mut(map.tiles[get_tile_idx((player_spawn_x - 1, player_spawn_y))])
+    //     .unwrap()
+    //     .0
+    //     .zone = PlayerZone::PlayerLeft;
 }
 
 fn move_player(
     keys: Res<ButtonInput<KeyCode>>,
-    mut query_player: Query<(&mut Transform, &mut Player, &mut Position)>,
+    mut query_player: Query<(&mut Transform, &mut Position), With<Player>>,
     mut query_tiles: Query<(&mut Tile, &Position, &Transform), Without<Player>>,
 ) {
-    let (mut player_transform, player, mut player_position) = query_player.single_mut();
+    let (mut player_transform, mut player_position) = query_player.single_mut();
 
     for (mut tile, tile_position, tile_transform) in query_tiles.iter_mut() {
-        if tile.zone == PlayerZone::PlayerTop {
-            if keys.just_pressed(KeyCode::KeyK) {
-                player_transform.translation.y = tile_transform.translation.y;
-                player_position.y = tile_position.y;
-                tile.zone = PlayerZone::Player;
-                break;
+        match tile.zone {
+            PlayerZone::PlayerTop => {
+                if keys.just_pressed(KeyCode::KeyK) {
+                    player_transform.translation.y = tile_transform.translation.y;
+                    player_position.y = tile_position.y;
+                    tile.zone = PlayerZone::Player;
+                    break;
+                }
             }
-        }
-        if tile.zone == PlayerZone::PlayerBottom {
-            if keys.just_pressed(KeyCode::KeyJ) {
-                player_transform.translation.y = tile_transform.translation.y;
-                player_position.y = tile_position.y;
-                tile.zone = PlayerZone::Player;
-                break;
+            PlayerZone::PlayerBottom => {
+                if keys.just_pressed(KeyCode::KeyJ) {
+                    player_transform.translation.y = tile_transform.translation.y;
+                    player_position.y = tile_position.y;
+                    tile.zone = PlayerZone::Player;
+                    break;
+                }
             }
-        }
-        if tile.zone == PlayerZone::PlayerLeft {
-            if keys.just_pressed(KeyCode::KeyH) {
-                player_transform.translation.x = tile_transform.translation.x;
-                player_position.x = tile_position.x;
-                tile.zone = PlayerZone::Player;
-                break;
+            PlayerZone::PlayerLeft => {
+                if keys.just_pressed(KeyCode::KeyH) {
+                    player_transform.translation.x = tile_transform.translation.x;
+                    player_position.x = tile_position.x;
+                    tile.zone = PlayerZone::Player;
+                    break;
+                }
             }
-        }
-        if tile.zone == PlayerZone::PlayerRight {
-            if keys.just_pressed(KeyCode::KeyL) {
-                player_transform.translation.x = tile_transform.translation.x;
-                player_position.x = tile_position.x;
-                tile.zone = PlayerZone::Player;
-                break;
+            PlayerZone::PlayerRight => {
+                if keys.just_pressed(KeyCode::KeyL) {
+                    player_transform.translation.x = tile_transform.translation.x;
+                    player_position.x = tile_position.x;
+                    tile.zone = PlayerZone::Player;
+                    break;
+                }
             }
+            _ => {}
         }
     }
 
     for (mut tile, _tile_position, _tile_transform) in query_tiles.iter_mut() {
-        if tile.zone == PlayerZone::PlayerTop {
-            tile.zone = PlayerZone::Outside;
-        } else if tile.zone == PlayerZone::PlayerBottom {
-            tile.zone = PlayerZone::Outside;
-        } else if tile.zone == PlayerZone::PlayerLeft {
-            tile.zone = PlayerZone::Outside;
-        } else if tile.zone == PlayerZone::PlayerRight {
-            tile.zone = PlayerZone::Outside;
+        match tile.zone {
+            PlayerZone::PlayerTop => tile.zone = PlayerZone::Outside,
+            PlayerZone::PlayerBottom => tile.zone = PlayerZone::Outside,
+            PlayerZone::PlayerLeft => tile.zone = PlayerZone::Outside,
+            PlayerZone::PlayerRight => tile.zone = PlayerZone::Outside,
+            _ => {}
         }
     }
 
-    for (mut tile, tile_position, _tile_transform) in query_tiles.iter_mut() {
-        if tile_position.x == player_position.x && tile_position.y == player_position.y + 1 {
-            tile.zone = PlayerZone::PlayerTop;
-        }
-        if tile_position.x == player_position.x && tile_position.y == player_position.y - 1 {
-            tile.zone = PlayerZone::PlayerBottom;
-        }
-        if tile_position.x == player_position.x - 1 && tile_position.y == player_position.y {
-            tile.zone = PlayerZone::PlayerLeft;
-        }
-        if tile_position.x == player_position.x + 1 && tile_position.y == player_position.y {
-            tile.zone = PlayerZone::PlayerRight;
-        }
-    }
+    // for (mut tile, tile_position, _tile_transform) in query_tiles.iter_mut() {
+    //     if tile_position.x == player_position.x && tile_position.y == player_position.y + 1 {
+    //         tile.zone = PlayerZone::PlayerTop;
+    //     }
+    //     if tile_position.x == player_position.x && tile_position.y == player_position.y - 1 {
+    //         tile.zone = PlayerZone::PlayerBottom;
+    //     }
+    //     if tile_position.x == player_position.x - 1 && tile_position.y == player_position.y {
+    //         tile.zone = PlayerZone::PlayerLeft;
+    //     }
+    //     if tile_position.x == player_position.x + 1 && tile_position.y == player_position.y {
+    //         tile.zone = PlayerZone::PlayerRight;
+    //     }
+    // }
 }
