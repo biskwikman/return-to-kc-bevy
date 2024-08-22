@@ -61,8 +61,7 @@ fn setup(mut commands: Commands, query_window: Query<&Window>) {
     let x_max = window.resolution.width() / 2.0;
     let x_min = window.resolution.width() / -2.0 + font_size / 2.0;
     let x_range = (x_min as i32..x_max as i32).step_by(font_size as usize);
-    let width = x_range.len();
-    println!("{width}");
+    // let width = x_range.len();
 
     for (iy, y) in (y_min as i32..y_max as i32)
         .step_by(font_size as usize)
@@ -99,8 +98,6 @@ fn set_player_zones(
     mut query_player_pos: Query<&Position, With<Player>>,
 ) {
     let player_pos = query_player_pos.single_mut();
-
-    println!("{}", get_tile_idx((player_pos.x, player_pos.y)));
 
     query_tiles
         .get_mut(map.tiles[get_tile_idx((player_pos.x, player_pos.y))])
@@ -179,38 +176,34 @@ fn move_player(
 ) {
     let (mut player_transform, mut player_pos) = query_player.single_mut();
 
-    for (tile, tile_position, tile_transform) in query_tiles.iter_mut() {
-        match tile.zone {
-            PlayerZone::PlayerTop => {
-                if keys.just_pressed(KeyCode::KeyK) {
-                    player_transform.translation.y = tile_transform.translation.y;
-                    player_pos.y = tile_position.y;
-                    break;
-                }
-            }
-            PlayerZone::PlayerBottom => {
-                if keys.just_pressed(KeyCode::KeyJ) {
-                    player_transform.translation.y = tile_transform.translation.y;
-                    player_pos.y = tile_position.y;
-                    break;
-                }
-            }
-            PlayerZone::PlayerLeft => {
-                if keys.just_pressed(KeyCode::KeyH) {
-                    player_transform.translation.x = tile_transform.translation.x;
-                    player_pos.x = tile_position.x;
-                    break;
-                }
-            }
-            PlayerZone::PlayerRight => {
-                if keys.just_pressed(KeyCode::KeyL) {
-                    player_transform.translation.x = tile_transform.translation.x;
-                    player_pos.x = tile_position.x;
-                    break;
-                }
-            }
-            _ => {}
+    let top_tile = map.tiles[get_tile_idx((player_pos.x, player_pos.y + 1))];
+    let bot_tile = map.tiles[get_tile_idx((player_pos.x, player_pos.y - 1))];
+    let right_tile = map.tiles[get_tile_idx((player_pos.x + 1, player_pos.y))];
+
+    if keys.just_pressed(KeyCode::KeyK) {
+        player_transform.translation.y = query_tiles.get_mut(top_tile).unwrap().2.translation.y;
+        player_pos.y = query_tiles.get_mut(top_tile).unwrap().1.y;
+    }
+    if keys.just_pressed(KeyCode::KeyJ) {
+        player_transform.translation.y = query_tiles.get_mut(bot_tile).unwrap().2.translation.y;
+        player_pos.y = query_tiles.get_mut(bot_tile).unwrap().1.y;
+    }
+    if keys.just_pressed(KeyCode::KeyH) {
+        if player_pos.x > 1 {
+            let left_tile = map.tiles[get_tile_idx((player_pos.x - 1, player_pos.y))];
+            player_transform.translation.x =
+                query_tiles.get_mut(left_tile).unwrap().2.translation.x;
+            player_pos.x = query_tiles.get_mut(left_tile).unwrap().1.x;
+        } else {
+            let left_tile = map.tiles[get_tile_idx((0, player_pos.y))];
+            player_transform.translation.x =
+                query_tiles.get_mut(left_tile).unwrap().2.translation.x;
+            player_pos.x = query_tiles.get_mut(left_tile).unwrap().1.x;
         }
+    }
+    if keys.just_pressed(KeyCode::KeyL) {
+        player_transform.translation.x = query_tiles.get_mut(right_tile).unwrap().2.translation.x;
+        player_pos.x = query_tiles.get_mut(right_tile).unwrap().1.x;
     }
 
     for (mut tile, _tile_position, _tile_transform) in query_tiles.iter_mut() {
