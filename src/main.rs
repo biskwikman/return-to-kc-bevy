@@ -176,11 +176,15 @@ fn move_player(
 ) {
     let (mut player_transform, mut player_pos) = query_player.single_mut();
 
-    let top_tile = map.tiles[get_tile_idx((player_pos.x, player_pos.y + 1))];
     let bot_tile = map.tiles[get_tile_idx((player_pos.x, player_pos.y - 1))];
     let right_tile = map.tiles[get_tile_idx((player_pos.x + 1, player_pos.y))];
 
     if keys.just_pressed(KeyCode::KeyK) {
+        let top_tile = if player_pos.y < 58 {
+            map.tiles[get_tile_idx((player_pos.x, player_pos.y + 1))]
+        } else {
+            map.tiles[get_tile_idx((player_pos.x, 59))]
+        };
         player_transform.translation.y = query_tiles.get_mut(top_tile).unwrap().2.translation.y;
         player_pos.y = query_tiles.get_mut(top_tile).unwrap().1.y;
     }
@@ -189,17 +193,14 @@ fn move_player(
         player_pos.y = query_tiles.get_mut(bot_tile).unwrap().1.y;
     }
     if keys.just_pressed(KeyCode::KeyH) {
-        if player_pos.x > 1 {
-            let left_tile = map.tiles[get_tile_idx((player_pos.x - 1, player_pos.y))];
-            player_transform.translation.x =
-                query_tiles.get_mut(left_tile).unwrap().2.translation.x;
-            player_pos.x = query_tiles.get_mut(left_tile).unwrap().1.x;
+        let left_tile = if player_pos.x > 1 {
+            map.tiles[get_tile_idx((player_pos.x - 1, player_pos.y))]
         } else {
-            let left_tile = map.tiles[get_tile_idx((0, player_pos.y))];
-            player_transform.translation.x =
-                query_tiles.get_mut(left_tile).unwrap().2.translation.x;
-            player_pos.x = query_tiles.get_mut(left_tile).unwrap().1.x;
-        }
+            map.tiles[get_tile_idx((0, player_pos.y))]
+        };
+
+        player_transform.translation.x = query_tiles.get_mut(left_tile).unwrap().2.translation.x;
+        player_pos.x = query_tiles.get_mut(left_tile).unwrap().1.x;
     }
     if keys.just_pressed(KeyCode::KeyL) {
         player_transform.translation.x = query_tiles.get_mut(right_tile).unwrap().2.translation.x;
