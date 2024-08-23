@@ -37,7 +37,13 @@ struct Position {
     y: usize,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Copy, Clone)]
+enum TileType {
+    Wall,
+    Floor,
+}
+
+#[derive(Clone, Copy, Debug)]
 enum PlayerZone {
     Player,
     PlayerTop,
