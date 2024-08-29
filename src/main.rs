@@ -29,6 +29,7 @@ struct Map {
 #[derive(Component, Debug)]
 struct Tile {
     zone: PlayerZone,
+    tiletype: TileType,
 }
 
 #[derive(Component)]
@@ -37,7 +38,7 @@ struct Position {
     y: usize,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 enum TileType {
     Wall,
     Floor,
@@ -67,7 +68,6 @@ fn setup(mut commands: Commands, query_window: Query<&Window>) {
     let x_max = window.resolution.width() / 2.0;
     let x_min = window.resolution.width() / -2.0 + font_size / 2.0;
     let x_range = (x_min as i32..x_max as i32).step_by(font_size as usize);
-    // let width = x_range.len();
 
     for (iy, y) in (y_min as i32..y_max as i32)
         .step_by(font_size as usize)
@@ -77,6 +77,7 @@ fn setup(mut commands: Commands, query_window: Query<&Window>) {
             commands.spawn((
                 Tile {
                     zone: PlayerZone::Outside,
+                    tiletype: TileType::Floor,
                 },
                 Position { x: ix, y: iy },
                 Transform {
@@ -92,9 +93,46 @@ fn get_tile_idx(idx_xy: (usize, usize)) -> usize {
     idx_xy.0 + 80 * idx_xy.1
 }
 
-fn create_map(query: Query<Entity, With<Tile>>, mut map: ResMut<Map>) {
-    for ent in query.iter() {
+fn create_map(
+    mut query: Query<(Entity, &mut Tile, &Transform)>,
+    // mut tile_query: Query<&mut Tile>,
+    mut map: ResMut<Map>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+) {
+    let font = asset_server.load("fonts/Mx437_IBM_BIOS.ttf");
+    let font_size = 10.0;
+    let text_style = TextStyle {
+        font: font.clone(),
+        font_size,
+        ..default()
+    };
+    for (ent, _tile, _transform) in query.iter() {
         map.tiles.push(ent);
+    }
+
+    query
+        .get_mut(map.tiles[get_tile_idx((12, 12))])
+        .unwrap()
+        .1
+        .tiletype = TileType::Wall;
+
+    for (ent, tile, transform) in query.iter() {
+        match tile.tiletype {
+            TileType::Wall => {
+                commands.entity(ent).insert(Text2dBundle {
+                    text: Text::from_section('#', text_style.clone())
+                        .with_justify(JustifyText::Center),
+                    transform: Transform::from_xyz(
+                        transform.translation.x,
+                        transform.translation.y,
+                        1.0,
+                    ),
+                    ..default()
+                });
+            }
+            TileType::Floor => {}
+        }
     }
 }
 
@@ -188,8 +226,10 @@ fn move_player(
         } else {
             map.tiles[get_tile_idx((player_pos.x, 59))]
         };
-        player_transform.translation.y = query_tiles.get_mut(top_tile).unwrap().2.translation.y;
-        player_pos.y = query_tiles.get_mut(top_tile).unwrap().1.y;
+        if query_tiles.get_mut(top_tile).unwrap().0.tiletype != TileType::Wall {
+            player_transform.translation.y = query_tiles.get_mut(top_tile).unwrap().2.translation.y;
+            player_pos.y = query_tiles.get_mut(top_tile).unwrap().1.y;
+        };
     }
     if keys.just_pressed(KeyCode::KeyJ) {
         let bot_tile = if player_pos.y > 1 {
@@ -197,8 +237,10 @@ fn move_player(
         } else {
             map.tiles[get_tile_idx((player_pos.x, 0))]
         };
-        player_transform.translation.y = query_tiles.get_mut(bot_tile).unwrap().2.translation.y;
-        player_pos.y = query_tiles.get_mut(bot_tile).unwrap().1.y;
+        if query_tiles.get_mut(bot_tile).unwrap().0.tiletype != TileType::Wall {
+            player_transform.translation.y = query_tiles.get_mut(bot_tile).unwrap().2.translation.y;
+            player_pos.y = query_tiles.get_mut(bot_tile).unwrap().1.y;
+        }
     }
     if keys.just_pressed(KeyCode::KeyH) {
         let left_tile = if player_pos.x > 1 {
@@ -207,8 +249,11 @@ fn move_player(
             map.tiles[get_tile_idx((0, player_pos.y))]
         };
 
-        player_transform.translation.x = query_tiles.get_mut(left_tile).unwrap().2.translation.x;
-        player_pos.x = query_tiles.get_mut(left_tile).unwrap().1.x;
+        if query_tiles.get_mut(left_tile).unwrap().0.tiletype != TileType::Wall {
+            player_transform.translation.x =
+                query_tiles.get_mut(left_tile).unwrap().2.translation.x;
+            player_pos.x = query_tiles.get_mut(left_tile).unwrap().1.x;
+        }
     }
     if keys.just_pressed(KeyCode::KeyL) {
         let right_tile = if player_pos.x < 78 {
@@ -216,8 +261,11 @@ fn move_player(
         } else {
             map.tiles[get_tile_idx((79, player_pos.y))]
         };
-        player_transform.translation.x = query_tiles.get_mut(right_tile).unwrap().2.translation.x;
-        player_pos.x = query_tiles.get_mut(right_tile).unwrap().1.x;
+        if query_tiles.get_mut(right_tile).unwrap().0.tiletype != TileType::Wall {
+            player_transform.translation.x =
+                query_tiles.get_mut(right_tile).unwrap().2.translation.x;
+            player_pos.x = query_tiles.get_mut(right_tile).unwrap().1.x;
+        }
     }
 
     for (mut tile, _tile_position, _tile_transform) in query_tiles.iter_mut() {
