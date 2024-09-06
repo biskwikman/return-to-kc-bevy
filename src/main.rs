@@ -11,15 +11,22 @@ mod rect;
 
 fn main() {
     let window_resolution = WindowResolution::new(800.0, 600.0);
+    let font_size = 10.0;
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                resolution: window_resolution,
+                resolution: window_resolution.clone(),
                 ..default()
             }),
             ..default()
         }))
         .init_resource::<Map>()
+        .insert_resource(FontSize(font_size))
+        .insert_resource(TileResolution {
+            width: (window_resolution.width() / font_size) as usize,
+            height: (window_resolution.height() / font_size) as usize,
+        })
+        // .init_resource::<TileResolution>()
         .add_systems(PreStartup, setup)
         .add_systems(Startup, create_map)
         .add_systems(
@@ -30,9 +37,16 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands, query_window: Query<&Window>) {
+fn setup(
+    mut commands: Commands,
+    query_window: Query<&Window>,
+    mut tile_resolution: ResMut<TileResolution>,
+    font_size: Res<FontSize>,
+) {
     let window = query_window.single();
-    let font_size = 10.0;
+    let font_size = font_size.0;
+    tile_resolution.width = (window.resolution.width() / font_size) as usize;
+    tile_resolution.height = (window.resolution.height() / font_size) as usize;
 
     commands.spawn(Camera2dBundle::default());
 

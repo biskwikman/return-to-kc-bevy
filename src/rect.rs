@@ -7,7 +7,7 @@ use bevy::prelude::*;
 // }
 
 pub trait Intersect {
-    fn is_intersect(&self, other: Rect) -> bool;
+    fn is_intersect(&self, other: &Rect) -> bool;
 }
 
 impl Intersect for Rect {
@@ -24,7 +24,7 @@ impl Intersect for Rect {
     //     self.x1 <= other.x2 && self.x2 >= other.x1 && self.y1 <= other.y2 && self.x2 >= other.y1
     // }
 
-    fn is_intersect(&self, other: Rect) -> bool {
+    fn is_intersect(&self, other: &Rect) -> bool {
         self.min.x <= other.max.x
             && self.max.x >= other.min.x
             && self.min.y <= other.max.y
