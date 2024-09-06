@@ -1,7 +1,10 @@
 use crate::components::*;
-use crate::rect::Intersect;
+use crate::rect::*;
 use crate::resources::*;
-use bevy::prelude::*;
+use bevy::prelude::{
+    default, AssetServer, Commands, Entity, JustifyText, ParamSet, Query, Res, ResMut, Text,
+    Text2dBundle, TextStyle, Transform,
+};
 use rand::Rng;
 use std::cmp::{max, min};
 
@@ -31,30 +34,44 @@ pub fn create_map(
 
     let mut rng = rand::thread_rng();
 
+    let tile_width = tile_resolution.width;
+    let tile_height = tile_resolution.height;
     for _ in 0..MAX_ROOMS {
-        let w = rng.gen_range(MIN_SIZE..=MAX_SIZE);
-        let h = rng.gen_range(MIN_SIZE..=MAX_SIZE);
-        let x = rng.gen_range(1..=tile_resolution.width as i32 - w - 1) - 1;
-        let y = rng.gen_range(1..=tile_resolution.height as i32 - h - 1) - 1;
-        let new_room = Rect::new(x as f32, y as f32, (x + w) as f32, (y + h) as f32);
+        let w: usize = rng.gen_range(MIN_SIZE..=MAX_SIZE) as usize;
+        let h: usize = rng.gen_range(MIN_SIZE..=MAX_SIZE) as usize;
+        let x: usize = rng.gen_range(1..=tile_width - w - 1) - 1;
+        let y: usize = rng.gen_range(1..=tile_height - h - 1) - 1;
+        let new_room = Rect::new(x as i32, y as i32, (x + w) as i32, (y + h) as i32);
         let mut ok = true;
         for other_room in rooms.iter() {
-            if new_room.is_intersect(other_room) {
+            if new_room.intersect(other_room) {
                 ok = false
             }
         }
         if ok {
-            apply_room_to_map(, , );
+            apply_room_to_map(&new_room, &map, set.p1());
+
+            if !rooms.is_empty() {
+                let (new_x, new_y) = new_room.center();
+                let (prev_x, prev_y) = rooms[rooms.len() - 1].center();
+                if rng.gen_range(0..2) == 1 {
+                    apply_horizontal_tunnel(
+                        &map,
+                        prev_x,
+                        new_x,
+                        prev_y,
+                        set.p1(),
+                        &tile_resolution,
+                    );
+                    apply_vertical_tunnel(&map, prev_y, new_y, new_x, set.p1(), &tile_resolution);
+                } else {
+                    apply_horizontal_tunnel(&map, prev_x, new_x, new_y, set.p1(), &tile_resolution);
+                    apply_vertical_tunnel(&map, prev_y, new_y, prev_x, set.p1(), &tile_resolution);
+                }
+            }
             rooms.push(new_room);
         }
     }
-
-    let room1 = Rect::new(0., 0., 35., 25.);
-    let room2 = Rect::new(50., 10., 59., 50.);
-
-    apply_room_to_map(&room1, &map, set.p1());
-    apply_room_to_map(&room2, &map, set.p1());
-    apply_horizontal_tunnel(&map, 35, 50, 20, set.p1(), tile_resolution);
 
     for (ent, tile, transform) in set.p0().iter() {
         match tile.tiletype {
@@ -88,8 +105,8 @@ fn create_text_style(
 }
 
 fn apply_room_to_map(room: &Rect, map: &ResMut<Map>, mut query: Query<&mut Tile>) {
-    for y in room.min.y as usize..=room.max.y as usize {
-        for x in room.min.x as usize..=room.max.x as usize {
+    for y in room.y0 as usize..=room.y1 as usize {
+        for x in room.x0 as usize..=room.x1 as usize {
             query
                 .get_mut(map.tiles[get_tile_idx((x, y))])
                 .unwrap()
@@ -104,7 +121,7 @@ fn apply_horizontal_tunnel(
     x2: i32,
     y: i32,
     mut query: Query<&mut Tile>,
-    tile_resolution: Res<TileResolution>,
+    tile_resolution: &Res<TileResolution>,
 ) {
     for x in min(x1, x2)..=max(x1, x2) {
         let idx = get_tile_idx((x as usize, y as usize));
@@ -120,7 +137,7 @@ fn apply_vertical_tunnel(
     y2: i32,
     x: i32,
     mut query: Query<&mut Tile>,
-    tile_resolution: Res<TileResolution>,
+    tile_resolution: &Res<TileResolution>,
 ) {
     for y in min(y1, y2)..=max(y1, y2) {
         let idx = get_tile_idx((x as usize, y as usize));
