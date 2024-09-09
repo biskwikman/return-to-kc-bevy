@@ -74,10 +74,16 @@ pub fn move_player(
 pub fn add_player(
     mut commands: Commands,
     mut query_tiles: Query<(&Position, &Transform)>,
+    query_rooms: Query<(Entity, &Room)>,
+    mut map: ResMut<Map>,
     asset_server: Res<AssetServer>,
 ) {
-    let player_spawn_x = 10;
-    let player_spawn_y = 10;
+    // TODO: this shouldn't be here
+    for (ent, _room) in query_rooms.iter() {
+        map.rooms.push(ent);
+    }
+
+    let (player_spawn_x, player_spawn_y) = query_rooms.get(map.rooms[0]).unwrap().1.rect.center();
     let font = asset_server.load("fonts/Mx437_IBM_BIOS.ttf");
     let font_size = 10.0;
     let text_style = TextStyle {
@@ -87,7 +93,7 @@ pub fn add_player(
     };
     let text_justification = JustifyText::Center;
     for (position, transform) in &mut query_tiles {
-        if position.y == player_spawn_y && position.x == player_spawn_x {
+        if position.y as i32 == player_spawn_y && position.x as i32 == player_spawn_x {
             commands.spawn((
                 Text2dBundle {
                     text: Text::from_section('@', text_style.clone())
@@ -103,6 +109,10 @@ pub fn add_player(
                 Position {
                     x: position.x,
                     y: position.y,
+                },
+                Viewshed {
+                    visible_tiles: Vec::new(),
+                    range: 6,
                 },
             ));
         }

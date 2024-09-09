@@ -8,6 +8,7 @@ use resources::*;
 mod map;
 use map::*;
 mod rect;
+mod visibility;
 
 fn main() {
     let window_resolution = WindowResolution::new(800.0, 600.0);
@@ -26,7 +27,6 @@ fn main() {
             width: (window_resolution.width() / font_size) as usize,
             height: (window_resolution.height() / font_size) as usize,
         })
-        // .init_resource::<TileResolution>()
         .add_systems(PreStartup, setup)
         .add_systems(Startup, create_map)
         .add_systems(

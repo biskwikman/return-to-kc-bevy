@@ -3,6 +3,7 @@ use bevy::prelude::*;
 #[derive(Resource, Default)]
 pub struct Map {
     pub tiles: Vec<Entity>,
+    pub rooms: Vec<Entity>,
 }
 
 #[derive(Resource, Default, Clone, Copy)]

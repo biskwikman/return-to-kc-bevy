@@ -13,7 +13,11 @@ pub fn get_tile_idx(idx_xy: (usize, usize)) -> usize {
 }
 
 pub fn create_map(
-    mut set: ParamSet<(Query<(Entity, &mut Tile, &Transform)>, Query<&mut Tile>)>,
+    mut set: ParamSet<(
+        Query<(Entity, &mut Tile, &Transform)>,
+        Query<&mut Tile>,
+        Query<(Entity, &mut Room)>,
+    )>,
     mut map: ResMut<Map>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -28,6 +32,7 @@ pub fn create_map(
     let text_style = create_text_style(asset_server, font_size);
 
     let mut rooms: Vec<Rect> = Vec::new();
+
     const MAX_ROOMS: i32 = 30;
     const MIN_SIZE: i32 = 6;
     const MAX_SIZE: i32 = 10;
@@ -49,6 +54,10 @@ pub fn create_map(
             }
         }
         if ok {
+            commands.spawn(Room {
+                rect: new_room.clone(),
+            });
+
             apply_room_to_map(&new_room, &map, set.p1());
 
             if !rooms.is_empty() {
@@ -72,6 +81,9 @@ pub fn create_map(
             rooms.push(new_room);
         }
     }
+    // for (ent, _room) in set.p2().iter() {
+    //     map.rooms.push(ent);
+    // }
 
     for (ent, tile, transform) in set.p0().iter() {
         match tile.tiletype {
