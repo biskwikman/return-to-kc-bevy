@@ -86,14 +86,9 @@ pub fn add_player(
     mut commands: Commands,
     mut query_tiles: Query<(&Position, &Transform)>,
     query_rooms: Query<(Entity, &Room)>,
-    mut map: ResMut<Map>,
+    map: ResMut<Map>,
     asset_server: Res<AssetServer>,
 ) {
-    // TODO: this shouldn't be here
-    // for (ent, _room) in query_rooms.iter() {
-    //     map.rooms.push(ent);
-    // }
-
     let (player_spawn_x, player_spawn_y) = query_rooms.get(map.rooms[0]).unwrap().1.rect.center();
     let font = asset_server.load("fonts/Mx437_IBM_BIOS.ttf");
     let font_size = 10.0;
