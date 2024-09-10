@@ -3,6 +3,17 @@ use crate::map::*;
 use crate::resources::*;
 use bevy::prelude::*;
 
+pub struct PlayerPlugin;
+
+impl Plugin for PlayerPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(
+            PostStartup,
+            (add_player, set_player_zones.after(add_player)),
+        );
+    }
+}
+
 pub fn move_player(
     map: ResMut<Map>,
     keys: Res<ButtonInput<KeyCode>>,
@@ -79,9 +90,9 @@ pub fn add_player(
     asset_server: Res<AssetServer>,
 ) {
     // TODO: this shouldn't be here
-    for (ent, _room) in query_rooms.iter() {
-        map.rooms.push(ent);
-    }
+    // for (ent, _room) in query_rooms.iter() {
+    //     map.rooms.push(ent);
+    // }
 
     let (player_spawn_x, player_spawn_y) = query_rooms.get(map.rooms[0]).unwrap().1.rect.center();
     let font = asset_server.load("fonts/Mx437_IBM_BIOS.ttf");

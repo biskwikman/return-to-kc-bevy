@@ -2,35 +2,82 @@ use crate::components::*;
 use crate::rect::*;
 use crate::resources::*;
 use bevy::prelude::{
-    default, AssetServer, Commands, Entity, JustifyText, ParamSet, Query, Res, ResMut, Text,
-    Text2dBundle, TextStyle, Transform,
+    default, App, AssetServer, Commands, Entity, IntoSystemConfigs, JustifyText, ParamSet, Plugin,
+    Query, Res, ResMut, Startup, Text, Text2dBundle, TextStyle, Transform, Vec3, Window,
 };
 use rand::Rng;
 use std::cmp::{max, min};
+
+pub struct MapPlugin;
+
+impl Plugin for MapPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(
+            Startup,
+            (
+                apply_map,
+                populate_map_resources.before(apply_map),
+                create_map.before(populate_map_resources),
+            ),
+        );
+    }
+}
 
 pub fn get_tile_idx(idx_xy: (usize, usize)) -> usize {
     idx_xy.0 + 80 * idx_xy.1
 }
 
-pub fn create_map(
-    mut set: ParamSet<(
-        Query<(Entity, &mut Tile, &Transform)>,
-        Query<&mut Tile>,
-        Query<(Entity, &mut Room)>,
-    )>,
+fn populate_map_resources(
+    mut query_tiles: Query<(Entity, &mut Tile)>,
+    query_rooms: Query<(Entity, &Room)>,
     mut map: ResMut<Map>,
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    tile_resolution: Res<TileResolution>,
-    font_size: Res<FontSize>,
 ) {
-    for (ent, mut tile, _transform) in set.p0().iter_mut() {
+    for (ent, mut tile) in query_tiles.iter_mut() {
         tile.tiletype = TileType::Wall;
         map.tiles.push(ent);
     }
 
-    let text_style = create_text_style(asset_server, font_size);
+    for (ent, _room) in query_rooms.iter() {
+        map.rooms.push(ent);
+    }
+}
 
+fn create_map(
+    mut commands: Commands,
+    query_window: Query<&Window>,
+    font_size: Res<FontSize>,
+    mut tile_resolution: ResMut<TileResolution>,
+) {
+    // Create tiles
+    let window = query_window.single();
+    tile_resolution.width = (window.resolution.width() / font_size.0) as usize;
+    tile_resolution.height = (window.resolution.height() / font_size.0) as usize;
+    let y_max = window.resolution.height() / 2.0;
+    let y_min = window.resolution.height() / -2.0 + font_size.0 / 2.0;
+    let x_max = window.resolution.width() / 2.0;
+    let x_min = window.resolution.width() / -2.0 + font_size.0 / 2.0;
+    let x_range = (x_min as i32..x_max as i32).step_by(font_size.0 as usize);
+
+    for (iy, y) in (y_min as i32..y_max as i32)
+        .step_by(font_size.0 as usize)
+        .enumerate()
+    {
+        for (ix, x) in x_range.clone().enumerate() {
+            commands.spawn((
+                Tile {
+                    zone: PlayerZone::Outside,
+                    tiletype: TileType::Floor,
+                },
+                Position { x: ix, y: iy },
+                Transform {
+                    translation: Vec3::new(x as f32, y as f32, 1.0),
+                    ..default()
+                },
+            ));
+        }
+    }
+
+    //Create Rooms
     let mut rooms: Vec<Rect> = Vec::new();
 
     const MAX_ROOMS: i32 = 30;
@@ -57,33 +104,41 @@ pub fn create_map(
             commands.spawn(Room {
                 rect: new_room.clone(),
             });
-
-            apply_room_to_map(&new_room, &map, set.p1());
-
-            if !rooms.is_empty() {
-                let (new_x, new_y) = new_room.center();
-                let (prev_x, prev_y) = rooms[rooms.len() - 1].center();
-                if rng.gen_range(0..2) == 1 {
-                    apply_horizontal_tunnel(
-                        &map,
-                        prev_x,
-                        new_x,
-                        prev_y,
-                        set.p1(),
-                        &tile_resolution,
-                    );
-                    apply_vertical_tunnel(&map, prev_y, new_y, new_x, set.p1(), &tile_resolution);
-                } else {
-                    apply_horizontal_tunnel(&map, prev_x, new_x, new_y, set.p1(), &tile_resolution);
-                    apply_vertical_tunnel(&map, prev_y, new_y, prev_x, set.p1(), &tile_resolution);
-                }
-            }
             rooms.push(new_room);
         }
     }
-    // for (ent, _room) in set.p2().iter() {
-    //     map.rooms.push(ent);
-    // }
+}
+
+fn apply_map(
+    mut set: ParamSet<(Query<(Entity, &mut Tile, &Transform)>, Query<&mut Tile>)>,
+    query_room: Query<&Room>,
+    tile_resolution: Res<TileResolution>,
+    map: ResMut<Map>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    font_size: Res<FontSize>,
+) {
+    let text_style = create_text_style(asset_server, font_size);
+
+    let mut rng = rand::thread_rng();
+
+    let mut i = 0;
+    let (mut old_x, mut old_y) = (0, 0);
+    for room in map.rooms.clone() {
+        let new_room = query_room.get(room).unwrap().rect;
+        apply_room_to_map(&new_room, &map, set.p1());
+        if i > 0 {
+            let (new_x, new_y) = new_room.center();
+            if rng.gen_range(0..2) == 1 {
+                apply_horizontal_tunnel(&map, old_x, new_x, old_y, set.p1(), &tile_resolution);
+            } else {
+                apply_horizontal_tunnel(&map, old_x, new_x, new_y, set.p1(), &tile_resolution);
+                apply_vertical_tunnel(&map, old_y, new_y, old_x, set.p1(), &tile_resolution);
+            }
+        }
+        (old_x, old_y) = new_room.center();
+        i += 1;
+    }
 
     for (ent, tile, transform) in set.p0().iter() {
         match tile.tiletype {
@@ -104,11 +159,7 @@ pub fn create_map(
     }
 }
 
-fn create_text_style(
-    asset_server: Res<AssetServer>,
-    // font: Handle<Font>,
-    font_size: Res<FontSize>,
-) -> TextStyle {
+fn create_text_style(asset_server: Res<AssetServer>, font_size: Res<FontSize>) -> TextStyle {
     TextStyle {
         font: asset_server.load("fonts/Mx437_IBM_BIOS.ttf"),
         font_size: font_size.0,

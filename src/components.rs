@@ -6,7 +6,7 @@ pub struct Viewshed {
     pub range: i32,
 }
 
-#[derive(Component)]
+#[derive(Component, Copy, Clone)]
 pub struct Room {
     pub rect: crate::rect::Rect,
 }
