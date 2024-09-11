@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 #[derive(Component)]
 pub struct Viewshed {
-    pub visible_tiles: Vec<Tile>,
+    pub visible_tiles: Vec<Entity>,
     pub range: i32,
 }
 
