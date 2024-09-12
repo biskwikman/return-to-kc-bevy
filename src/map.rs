@@ -159,7 +159,7 @@ fn apply_map(
     }
 }
 
-fn create_text_style(asset_server: Res<AssetServer>, font_size: Res<FontSize>) -> TextStyle {
+pub fn create_text_style(asset_server: Res<AssetServer>, font_size: Res<FontSize>) -> TextStyle {
     TextStyle {
         font: asset_server.load("fonts/Mx437_IBM_BIOS.ttf"),
         font_size: font_size.0,
