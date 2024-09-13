@@ -144,7 +144,7 @@ fn apply_map(
         match tile.tiletype {
             TileType::Wall => {
                 commands.entity(ent).insert(Text2dBundle {
-                    text: Text::from_section('#', text_style.clone())
+                    text: Text::from_section(' ', text_style.clone())
                         .with_justify(JustifyText::Center),
                     transform: Transform::from_xyz(
                         transform.translation.x,
@@ -154,7 +154,18 @@ fn apply_map(
                     ..default()
                 });
             }
-            TileType::Floor => {}
+            TileType::Floor => {
+                commands.entity(ent).insert(Text2dBundle {
+                    text: Text::from_section(' ', text_style.clone())
+                        .with_justify(JustifyText::Center),
+                    transform: Transform::from_xyz(
+                        transform.translation.x,
+                        transform.translation.y,
+                        1.0,
+                    ),
+                    ..default()
+                });
+            }
         }
     }
 }
