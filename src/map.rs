@@ -1,6 +1,7 @@
 use crate::components::*;
 use crate::rect::*;
 use crate::resources::*;
+use bevy::color::Srgba;
 use bevy::prelude::{
     default, App, AssetServer, Commands, Entity, IntoSystemConfigs, JustifyText, ParamSet, Plugin,
     Query, Res, ResMut, Startup, Text, Text2dBundle, TextStyle, Transform, Vec3, Window,
@@ -67,6 +68,7 @@ fn create_map(
                 Tile {
                     zone: PlayerZone::Outside,
                     tiletype: TileType::Floor,
+                    visibletype: VisibleType::Undiscovered,
                 },
                 Position { x: ix, y: iy },
                 Transform {
@@ -118,7 +120,16 @@ fn apply_map(
     asset_server: Res<AssetServer>,
     font_size: Res<FontSize>,
 ) {
-    let text_style = create_text_style(asset_server, font_size);
+    let text_style = create_text_style(
+        &asset_server,
+        &font_size,
+        Srgba {
+            red: 255.,
+            green: 255.,
+            blue: 0.,
+            alpha: 0.4,
+        },
+    );
 
     let mut rng = rand::thread_rng();
 
@@ -170,11 +181,15 @@ fn apply_map(
     }
 }
 
-pub fn create_text_style(asset_server: Res<AssetServer>, font_size: Res<FontSize>) -> TextStyle {
+pub fn create_text_style(
+    asset_server: &Res<AssetServer>,
+    font_size: &Res<FontSize>,
+    srgba: Srgba,
+) -> TextStyle {
     TextStyle {
         font: asset_server.load("fonts/Mx437_IBM_BIOS.ttf"),
         font_size: font_size.0,
-        ..default()
+        color: bevy::color::Color::Srgba(srgba),
     }
 }
 

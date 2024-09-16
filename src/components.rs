@@ -15,6 +15,15 @@ pub struct Room {
 pub struct Tile {
     pub zone: PlayerZone,
     pub tiletype: TileType,
+    pub visibletype: VisibleType,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum VisibleType {
+    Visible,
+    Obscured,
+    Memoried,
+    Undiscovered,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
