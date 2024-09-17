@@ -6,6 +6,7 @@ use bevy::prelude::{
     default, App, AssetServer, Commands, Entity, IntoSystemConfigs, JustifyText, ParamSet, Plugin,
     Query, Res, ResMut, Startup, Text, Text2dBundle, TextStyle, Transform, Vec3, Window,
 };
+use bevy_rapier2d::prelude::*;
 use rand::Rng;
 use std::cmp::{max, min};
 
@@ -75,6 +76,7 @@ fn create_map(
                     translation: Vec3::new(x as f32, y as f32, 1.0),
                     ..default()
                 },
+                Collider::cuboid(5.0, 5.0),
             ));
         }
     }

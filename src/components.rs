@@ -18,7 +18,7 @@ pub struct Tile {
     pub visibletype: VisibleType,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum VisibleType {
     Visible,
     Obscured,

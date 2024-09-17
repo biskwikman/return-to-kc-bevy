@@ -9,6 +9,8 @@ use map::*;
 mod rect;
 mod visibility;
 use visibility::*;
+mod events;
+use events::*;
 
 fn main() {
     let window_resolution = WindowResolution::new(800.0, 600.0);
@@ -21,6 +23,7 @@ fn main() {
     });
     let font_size = 10.0;
     App::new()
+        .add_event::<Tick>()
         .add_plugins(default_plugins)
         .add_plugins((PlayerPlugin, MapPlugin, VisibilityPlugin))
         .init_resource::<Map>()

@@ -1,4 +1,5 @@
 use crate::components::*;
+use crate::events::*;
 use crate::map::*;
 use crate::resources::*;
 use bevy::prelude::*;
@@ -19,6 +20,7 @@ pub fn move_player(
     keys: Res<ButtonInput<KeyCode>>,
     mut query_player: Query<(&mut Transform, &mut Position), With<Player>>,
     mut query_tiles: Query<(&mut Tile, &Position, &Transform), Without<Player>>,
+    mut events: EventWriter<Tick>,
 ) {
     let (mut player_transform, mut player_pos) = query_player.single_mut();
 
@@ -80,6 +82,7 @@ pub fn move_player(
             _ => {}
         }
     }
+    events.send(Tick);
 }
 
 pub fn add_player(
