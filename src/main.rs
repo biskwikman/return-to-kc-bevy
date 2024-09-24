@@ -1,6 +1,7 @@
 use bevy::{prelude::*, window::WindowResolution};
 mod components;
 mod player;
+use bevy_rapier2d::prelude::*;
 use player::*;
 mod resources;
 use resources::*;
@@ -26,6 +27,8 @@ fn main() {
         .add_event::<Tick>()
         .add_plugins(default_plugins)
         .add_plugins((PlayerPlugin, MapPlugin, VisibilityPlugin))
+        .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
+        // .add_plugins(RapierDebugRenderPlugin::default())
         .init_resource::<Map>()
         .insert_resource(FontSize(font_size))
         .insert_resource(TileResolution {

@@ -33,7 +33,8 @@ pub fn move_player(
         if query_tiles.get_mut(top_tile).unwrap().0.tiletype != TileType::Wall {
             player_transform.translation.y = query_tiles.get_mut(top_tile).unwrap().2.translation.y;
             player_pos.y = query_tiles.get_mut(top_tile).unwrap().1.y;
-        };
+        }
+        events.send(Tick);
     }
     if keys.just_pressed(KeyCode::KeyJ) {
         let bot_tile = if player_pos.y > 1 {
@@ -45,6 +46,7 @@ pub fn move_player(
             player_transform.translation.y = query_tiles.get_mut(bot_tile).unwrap().2.translation.y;
             player_pos.y = query_tiles.get_mut(bot_tile).unwrap().1.y;
         }
+        events.send(Tick);
     }
     if keys.just_pressed(KeyCode::KeyH) {
         let left_tile = if player_pos.x > 1 {
@@ -58,6 +60,7 @@ pub fn move_player(
                 query_tiles.get_mut(left_tile).unwrap().2.translation.x;
             player_pos.x = query_tiles.get_mut(left_tile).unwrap().1.x;
         }
+        events.send(Tick);
     }
     if keys.just_pressed(KeyCode::KeyL) {
         let right_tile = if player_pos.x < 78 {
@@ -70,6 +73,7 @@ pub fn move_player(
                 query_tiles.get_mut(right_tile).unwrap().2.translation.x;
             player_pos.x = query_tiles.get_mut(right_tile).unwrap().1.x;
         }
+        events.send(Tick);
     }
 
     for (mut tile, _tile_position, _tile_transform) in query_tiles.iter_mut() {
@@ -82,7 +86,6 @@ pub fn move_player(
             _ => {}
         }
     }
-    events.send(Tick);
 }
 
 pub fn add_player(

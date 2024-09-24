@@ -1,5 +1,3 @@
-use std::f32::INFINITY;
-
 use crate::components::*;
 use crate::create_text_style;
 use crate::events::*;
@@ -22,16 +20,26 @@ impl Plugin for VisibilityPlugin {
 }
 
 fn get_viewshed(
-    mut set: ParamSet<(Query<(&mut Tile, &Position)>, Query<&mut Tile>)>,
-    mut query_player: Query<(&Position, &mut Viewshed), With<Player>>,
+    rapier_context: Res<RapierContext>,
+    mut set: ParamSet<(
+        Query<(&mut Tile, &Position, &Transform)>,
+        Query<(&mut Tile, &Position)>,
+    )>,
+    mut query_player: Query<(&Position, &Transform, &mut Viewshed), With<Player>>,
+    query: Query<&Collider>,
     map: Res<Map>,
 ) {
-    let (player_pos, mut player_viewshed) = query_player.get_single_mut().unwrap();
+    let (player_pos, player_transform, mut player_viewshed) =
+        query_player.get_single_mut().unwrap();
     player_viewshed.visible_tiles.clear();
     let view_range = player_viewshed.range;
+    let player_transform_x = player_transform.translation.x;
+    let player_transform_y = player_transform.translation.y;
+
+    let player_tile_ent = map.tiles[get_tile_idx((player_pos.x, player_pos.y))];
 
     // FOV direction crawl
-    for (mut tile, _pos) in set.p0().iter_mut() {
+    for (mut tile, _pos, _trans) in set.p0().iter_mut() {
         match tile.visibletype {
             VisibleType::Visible => {
                 tile.visibletype = VisibleType::Memoried;
@@ -51,7 +59,7 @@ fn get_viewshed(
                 let y = player_pos.y as i32 + depth;
                 let x = player_pos.x as i32 + angle;
                 if y > 0 && y < 60 && x > 0 && x < 80 {
-                    let c_tiletype = set
+                    let tile_transform_x = set
                         .p0()
                         .get_mut(
                             map.tiles[get_tile_idx((
@@ -60,38 +68,39 @@ fn get_viewshed(
                             ))],
                         )
                         .unwrap()
-                        .0
-                        .tiletype;
-                    let tile_y = set
-                        .p0()
-                        .get_mut(
-                            map.tiles[get_tile_idx((
-                                (player_pos.x as i32 + angle) as usize,
-                                player_pos.y + depth as usize,
-                            ))],
-                        )
-                        .unwrap()
-                        .1
-                        .y;
-                    let tile_x = set
-                        .p0()
-                        .get_mut(
-                            map.tiles[get_tile_idx((
-                                (player_pos.x as i32 + angle) as usize,
-                                player_pos.y + depth as usize,
-                            ))],
-                        )
-                        .unwrap()
-                        .1
+                        .2
+                        .translation
                         .x;
-                    let slope = (tile_y as f32 - player_pos.y as f32)
-                        / (tile_x as f32 - player_pos.x as f32);
-                    println!("{slope}");
-
-                    set.p1()
-                        .get_mut(map.tiles[get_tile_idx((tile_x, tile_y))])
+                    let tile_transform_y = set
+                        .p0()
+                        .get_mut(
+                            map.tiles[get_tile_idx((
+                                (player_pos.x as i32 + angle) as usize,
+                                player_pos.y + depth as usize,
+                            ))],
+                        )
                         .unwrap()
-                        .visibletype = VisibleType::Visible
+                        .2
+                        .translation
+                        .y;
+
+                    let seen_tile = cast_ray(
+                        &rapier_context,
+                        player_transform_x,
+                        player_transform_y,
+                        tile_transform_x,
+                        tile_transform_y,
+                        player_tile_ent,
+                        set.p1(),
+                    );
+
+                    match seen_tile {
+                        Some(..) => {
+                            set.p1().get_mut(seen_tile.unwrap()).unwrap().0.visibletype =
+                                VisibleType::Visible;
+                        }
+                        None => {}
+                    }
                 }
             }
         }
@@ -99,26 +108,36 @@ fn get_viewshed(
 }
 
 fn cast_ray(
-    rapier_context: Res<RapierContext>,
+    rapier_context: &Res<RapierContext>,
     player_x: f32,
     player_y: f32,
     tile_x: f32,
     tile_y: f32,
-) {
+    player_tile_ent: Entity,
+    custom_query: Query<(&mut Tile, &Position)>,
+) -> Option<Entity> {
     let ray_pos = Vec2::new(player_x, player_y);
     let ray_dir = Vec2::new(tile_x, tile_y);
-    let max_toi = 4.0;
-    let solid = true;
-    let filter = QueryFilter::default();
+    let max_toi = 1.0;
+    let solid = false;
+    let n = QueryFilter::new();
+    let predicate = |handle| {
+        custom_query
+            .get(handle)
+            .is_ok_and(|tile| tile.0.tiletype == TileType::Wall)
+    };
+    let filter = QueryFilter::exclude_rigid_body(n, player_tile_ent).predicate(&predicate);
 
     if let Some((entity, toi)) = rapier_context.cast_ray(ray_pos, ray_dir, max_toi, solid, filter) {
         let hit_point = ray_pos + ray_dir + toi;
         println!("Entity {:?} hit at point {}", entity, hit_point);
+        Some(entity)
+    } else {
+        None
     }
 }
 
 fn apply_view(
-    mut query_viewshed: Query<&mut Viewshed>,
     mut query_text: Query<(&mut Text, &Tile)>,
     asset_server: Res<AssetServer>,
     font_size: Res<FontSize>,
