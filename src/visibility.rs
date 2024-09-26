@@ -1,8 +1,11 @@
+use std::f64::consts::PI;
+
 use crate::components::*;
 use crate::create_text_style;
 use crate::events::*;
 use crate::get_tile_idx;
 use crate::resources::*;
+use bevy::math::NormedVectorSpace;
 use bevy::prelude::*;
 pub struct VisibilityPlugin;
 use bevy_rapier2d::prelude::*;
@@ -53,58 +56,70 @@ fn get_viewshed(
         }
     }
 
-    for depth in 1..=view_range {
-        for breadth in (3..=(depth * 2) + 1).step_by(2) {
-            for angle in breadth / -2..=breadth / 2 {
-                let y = player_pos.y as i32 + depth;
-                let x = player_pos.x as i32 + angle;
-                if y > 0 && y < 60 && x > 0 && x < 80 {
-                    let tile_transform_x = set
-                        .p0()
-                        .get_mut(
-                            map.tiles[get_tile_idx((
-                                (player_pos.x as i32 + angle) as usize,
-                                player_pos.y + depth as usize,
-                            ))],
-                        )
-                        .unwrap()
-                        .2
-                        .translation
-                        .x;
-                    let tile_transform_y = set
-                        .p0()
-                        .get_mut(
-                            map.tiles[get_tile_idx((
-                                (player_pos.x as i32 + angle) as usize,
-                                player_pos.y + depth as usize,
-                            ))],
-                        )
-                        .unwrap()
-                        .2
-                        .translation
-                        .y;
+    // for depth in 1..=view_range {
+    //     for breadth in (3..=(depth * 2) + 1).step_by(2) {
+    //         for angle in breadth / -2..=breadth / 2 {
+    //             let y = player_pos.y as i32 + depth;
+    //             let x = player_pos.x as i32 + angle;
+    //             if y > 0 && y < 60 && x > 0 && x < 80 {
+    //                 let tile_transform_x = set
+    //                     .p0()
+    //                     .get_mut(
+    //                         map.tiles[get_tile_idx((
+    //                             (player_pos.x as i32 + angle) as usize,
+    //                             player_pos.y + depth as usize,
+    //                         ))],
+    //                     )
+    //                     .unwrap()
+    //                     .2
+    //                     .translation
+    //                     .x;
+    //                 let tile_transform_y = set
+    //                     .p0()
+    //                     .get_mut(
+    //                         map.tiles[get_tile_idx((
+    //                             (player_pos.x as i32 + angle) as usize,
+    //                             player_pos.y + depth as usize,
+    //                         ))],
+    //                     )
+    //                     .unwrap()
+    //                     .2
+    //                     .translation
+    //                     .y;
 
-                    let seen_tile = cast_ray(
-                        &rapier_context,
-                        player_transform_x,
-                        player_transform_y,
-                        tile_transform_x,
-                        tile_transform_y,
-                        player_tile_ent,
-                        set.p1(),
-                    );
+    for deg in (1..=360).step_by(10) {
+        let radian = (deg as f32).to_radians();
+        let radius = 10.0;
+        let x = player_transform_x + radius * radian.cos();
+        let y = player_transform_y + radius * radian.sin();
 
-                    match seen_tile {
-                        Some(..) => {
-                            set.p1().get_mut(seen_tile.unwrap()).unwrap().0.visibletype =
-                                VisibleType::Visible;
-                        }
-                        None => {}
-                    }
-                }
+        println!("player transform: {player_transform_x}, {player_transform_y}");
+        println!("circle location: {x}, {y}");
+
+        let seen_tile = cast_ray(
+            &rapier_context,
+            player_transform_x,
+            player_transform_y,
+            x,
+            y,
+            // tile_transform_x,
+            // tile_transform_y,
+            player_tile_ent,
+            set.p1(),
+        );
+
+        match seen_tile {
+            Some(..) => {
+                set.p1().get_mut(seen_tile.unwrap()).unwrap().0.visibletype = VisibleType::Visible;
             }
+            None => {}
         }
     }
+
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 fn cast_ray(
@@ -116,9 +131,9 @@ fn cast_ray(
     player_tile_ent: Entity,
     custom_query: Query<(&mut Tile, &Position)>,
 ) -> Option<Entity> {
-    let ray_pos = Vec2::new(player_x, player_y);
+    let ray_origin = Vec2::new(player_x, player_y);
     let ray_dir = Vec2::new(tile_x, tile_y);
-    let max_toi = 1.0;
+    let max_toi = 100.0;
     let solid = false;
     let n = QueryFilter::new();
     let predicate = |handle| {
@@ -128,9 +143,9 @@ fn cast_ray(
     };
     let filter = QueryFilter::exclude_rigid_body(n, player_tile_ent).predicate(&predicate);
 
-    if let Some((entity, toi)) = rapier_context.cast_ray(ray_pos, ray_dir, max_toi, solid, filter) {
-        let hit_point = ray_pos + ray_dir + toi;
-        println!("Entity {:?} hit at point {}", entity, hit_point);
+    if let Some((entity, _toi)) =
+        rapier_context.cast_ray(ray_origin, ray_dir, max_toi, solid, filter)
+    {
         Some(entity)
     } else {
         None
