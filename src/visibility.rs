@@ -141,12 +141,12 @@ fn cast_ray(
 pub fn apply_view(
     mut query_text: Query<(&mut Text, &Tile)>,
     asset_server: Res<AssetServer>,
-    font_size: Res<FontSize>,
+    map: Res<Map>,
 ) {
     println!("applying view");
     let text_style_vis = create_text_style(
         &asset_server,
-        &font_size,
+        map.font_size,
         Srgba {
             red: 60.,
             green: 170.,
@@ -156,7 +156,7 @@ pub fn apply_view(
     );
     let text_style_mem = create_text_style(
         &asset_server,
-        &font_size,
+        map.font_size,
         Srgba {
             red: 255.,
             green: 255.,

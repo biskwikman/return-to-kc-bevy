@@ -1,5 +1,7 @@
+use crate::apply_view;
 use crate::components::*;
 use crate::events::*;
+use crate::get_viewshed;
 use crate::map::*;
 use crate::resources::*;
 use bevy::prelude::*;
@@ -8,9 +10,22 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PostStartup, (add_player,))
-            .add_systems(Update, move_player);
+        app.add_systems(
+            PostStartup,
+            (
+                add_player,
+                do_initial_tick.after(add_player),
+                get_viewshed.after(do_initial_tick),
+                apply_view.after(get_viewshed),
+            ),
+        )
+        .add_systems(Update, move_player);
     }
+}
+
+fn do_initial_tick(mut events: EventWriter<Tick>) {
+    println!("tick");
+    events.send(Tick);
 }
 
 pub fn move_player(
@@ -81,7 +96,6 @@ pub fn add_player(
     query_rooms: Query<(Entity, &Room)>,
     map: ResMut<Map>,
     asset_server: Res<AssetServer>,
-    mut events: EventWriter<Tick>,
 ) {
     let (player_spawn_x, player_spawn_y) = query_rooms.get(map.rooms[0]).unwrap().1.rect.center();
     let font = asset_server.load("fonts/Mx437_IBM_BIOS.ttf");
@@ -117,5 +131,4 @@ pub fn add_player(
             ));
         }
     }
-    events.send(Tick);
 }

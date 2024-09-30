@@ -44,24 +44,17 @@ fn populate_map_resources(
     }
 }
 
-fn create_map(
-    mut commands: Commands,
-    query_window: Query<&Window>,
-    font_size: Res<FontSize>,
-    mut tile_resolution: ResMut<TileResolution>,
-) {
+fn create_map(mut commands: Commands, query_window: Query<&Window>, map: ResMut<Map>) {
     // Create tiles
     let window = query_window.single();
-    tile_resolution.width = (window.resolution.width() / font_size.0) as usize;
-    tile_resolution.height = (window.resolution.height() / font_size.0) as usize;
     let y_max = window.resolution.height() / 2.0;
-    let y_min = window.resolution.height() / -2.0 + font_size.0 / 2.0;
+    let y_min = window.resolution.height() / -2.0 + map.font_size / 2.0;
     let x_max = window.resolution.width() / 2.0;
-    let x_min = window.resolution.width() / -2.0 + font_size.0 / 2.0;
-    let x_range = (x_min as i32..x_max as i32).step_by(font_size.0 as usize);
+    let x_min = window.resolution.width() / -2.0 + map.font_size / 2.0;
+    let x_range = (x_min as i32..x_max as i32).step_by(map.font_size as usize);
 
     for (iy, y) in (y_min as i32..y_max as i32)
-        .step_by(font_size.0 as usize)
+        .step_by(map.font_size as usize)
         .enumerate()
     {
         for (ix, x) in x_range.clone().enumerate() {
@@ -89,8 +82,8 @@ fn create_map(
 
     let mut rng = rand::thread_rng();
 
-    let tile_width = tile_resolution.width;
-    let tile_height = tile_resolution.height;
+    let tile_width = map.tile_res.width;
+    let tile_height = map.tile_res.height;
     for _ in 0..MAX_ROOMS {
         let w: usize = rng.gen_range(MIN_SIZE..=MAX_SIZE) as usize;
         let h: usize = rng.gen_range(MIN_SIZE..=MAX_SIZE) as usize;
@@ -115,15 +108,13 @@ fn create_map(
 fn apply_map(
     mut set: ParamSet<(Query<(Entity, &mut Tile, &Transform)>, Query<&mut Tile>)>,
     query_room: Query<&Room>,
-    tile_resolution: Res<TileResolution>,
     map: ResMut<Map>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    font_size: Res<FontSize>,
 ) {
     let text_style = create_text_style(
         &asset_server,
-        &font_size,
+        map.font_size,
         Srgba {
             red: 255.,
             green: 255.,
@@ -142,10 +133,10 @@ fn apply_map(
         if i > 0 {
             let (new_x, new_y) = new_room.center();
             if rng.gen_range(0..2) == 1 {
-                apply_horizontal_tunnel(&map, old_x, new_x, old_y, set.p1(), &tile_resolution);
+                apply_horizontal_tunnel(&map, old_x, new_x, old_y, set.p1());
             } else {
-                apply_horizontal_tunnel(&map, old_x, new_x, new_y, set.p1(), &tile_resolution);
-                apply_vertical_tunnel(&map, old_y, new_y, old_x, set.p1(), &tile_resolution);
+                apply_horizontal_tunnel(&map, old_x, new_x, new_y, set.p1());
+                apply_vertical_tunnel(&map, old_y, new_y, old_x, set.p1());
             }
         }
         (old_x, old_y) = new_room.center();
@@ -184,12 +175,12 @@ fn apply_map(
 
 pub fn create_text_style(
     asset_server: &Res<AssetServer>,
-    font_size: &Res<FontSize>,
+    font_size: f32,
     srgba: Srgba,
 ) -> TextStyle {
     TextStyle {
         font: asset_server.load("fonts/Mx437_IBM_BIOS.ttf"),
-        font_size: font_size.0,
+        font_size,
         color: bevy::color::Color::Srgba(srgba),
     }
 }
@@ -211,27 +202,19 @@ fn apply_horizontal_tunnel(
     x2: i32,
     y: i32,
     mut query: Query<&mut Tile>,
-    tile_resolution: &Res<TileResolution>,
 ) {
     for x in min(x1, x2)..=max(x1, x2) {
         let idx = get_tile_idx(x as usize, y as usize);
-        if idx > 0 && idx < tile_resolution.width * tile_resolution.height {
+        if idx > 0 && idx < map.tile_res.width * map.tile_res.height {
             query.get_mut(map.tiles[idx]).unwrap().tiletype = TileType::Floor;
         }
     }
 }
 
-fn apply_vertical_tunnel(
-    map: &ResMut<Map>,
-    y1: i32,
-    y2: i32,
-    x: i32,
-    mut query: Query<&mut Tile>,
-    tile_resolution: &Res<TileResolution>,
-) {
+fn apply_vertical_tunnel(map: &ResMut<Map>, y1: i32, y2: i32, x: i32, mut query: Query<&mut Tile>) {
     for y in min(y1, y2)..=max(y1, y2) {
         let idx = get_tile_idx(x as usize, y as usize);
-        if idx > 0 && idx < tile_resolution.width * tile_resolution.height {
+        if idx > 0 && idx < map.tile_res.width * map.tile_res.height {
             query.get_mut(map.tiles[idx]).unwrap().tiletype = TileType::Floor;
         }
     }

@@ -1,4 +1,4 @@
-use bevy::{prelude::*, window::WindowResolution};
+use bevy::prelude::*;
 
 #[derive(Resource)]
 pub struct Map {
@@ -8,15 +8,11 @@ pub struct Map {
     pub tile_res: TileResolution,
 }
 
-// #[derive(Resource, Default, Clone, Copy)]
 #[derive(Clone, Copy)]
 pub struct TileResolution {
     pub height: usize,
     pub width: usize,
 }
-
-// #[derive(Resource)]
-// pub struct FontSize(pub f32);
 
 impl FromWorld for Map {
     fn from_world(world: &mut World) -> Self {
