@@ -2,6 +2,7 @@ use crate::components::*;
 use crate::create_text_style;
 use crate::events::*;
 use crate::get_tile_idx;
+use crate::move_player;
 use crate::resources::*;
 use bevy::prelude::*;
 use std::iter::zip;
@@ -15,7 +16,8 @@ impl Plugin for VisibilityPlugin {
             (
                 get_viewshed.run_if(on_event::<Tick>()),
                 apply_view.after(get_viewshed).run_if(on_event::<Tick>()),
-            ),
+            )
+                .after(move_player),
         );
     }
 }
