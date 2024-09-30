@@ -25,8 +25,8 @@ impl Plugin for MapPlugin {
     }
 }
 
-pub fn get_tile_idx(idx_xy: (usize, usize)) -> usize {
-    idx_xy.0 + 80 * idx_xy.1
+pub fn get_tile_idx(idx_x: usize, idx_y: usize) -> usize {
+    idx_x + 80 * idx_y
 }
 
 fn populate_map_resources(
@@ -67,7 +67,6 @@ fn create_map(
         for (ix, x) in x_range.clone().enumerate() {
             commands.spawn((
                 Tile {
-                    zone: PlayerZone::Outside,
                     tiletype: TileType::Floor,
                     visibletype: VisibleType::Undiscovered,
                 },
@@ -199,7 +198,7 @@ fn apply_room_to_map(room: &Rect, map: &ResMut<Map>, mut query: Query<&mut Tile>
     for y in room.y0 as usize..=room.y1 as usize {
         for x in room.x0 as usize..=room.x1 as usize {
             query
-                .get_mut(map.tiles[get_tile_idx((x, y))])
+                .get_mut(map.tiles[get_tile_idx(x, y)])
                 .unwrap()
                 .tiletype = TileType::Floor;
         }
@@ -215,7 +214,7 @@ fn apply_horizontal_tunnel(
     tile_resolution: &Res<TileResolution>,
 ) {
     for x in min(x1, x2)..=max(x1, x2) {
-        let idx = get_tile_idx((x as usize, y as usize));
+        let idx = get_tile_idx(x as usize, y as usize);
         if idx > 0 && idx < tile_resolution.width * tile_resolution.height {
             query.get_mut(map.tiles[idx]).unwrap().tiletype = TileType::Floor;
         }
@@ -231,7 +230,7 @@ fn apply_vertical_tunnel(
     tile_resolution: &Res<TileResolution>,
 ) {
     for y in min(y1, y2)..=max(y1, y2) {
-        let idx = get_tile_idx((x as usize, y as usize));
+        let idx = get_tile_idx(x as usize, y as usize);
         if idx > 0 && idx < tile_resolution.width * tile_resolution.height {
             query.get_mut(map.tiles[idx]).unwrap().tiletype = TileType::Floor;
         }

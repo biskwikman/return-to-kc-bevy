@@ -13,7 +13,6 @@ pub struct Room {
 
 #[derive(Component, Debug)]
 pub struct Tile {
-    pub zone: PlayerZone,
     pub tiletype: TileType,
     pub visibletype: VisibleType,
 }
@@ -30,16 +29,6 @@ pub enum VisibleType {
 pub enum TileType {
     Wall,
     Floor,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum PlayerZone {
-    Player,
-    PlayerTop,
-    PlayerBottom,
-    PlayerLeft,
-    PlayerRight,
-    Outside,
 }
 
 #[derive(Component)]

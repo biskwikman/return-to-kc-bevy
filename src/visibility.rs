@@ -4,7 +4,6 @@ use crate::events::*;
 use crate::get_tile_idx;
 use crate::resources::*;
 use bevy::prelude::*;
-use bevy_rapier2d::math::Real;
 use std::iter::zip;
 pub struct VisibilityPlugin;
 use bevy_rapier2d::prelude::*;
@@ -15,13 +14,13 @@ impl Plugin for VisibilityPlugin {
             Update,
             (
                 get_viewshed.run_if(on_event::<Tick>()),
-                apply_view.after(get_viewshed),
+                apply_view.after(get_viewshed).run_if(on_event::<Tick>()),
             ),
         );
     }
 }
 
-fn get_viewshed(
+pub fn get_viewshed(
     rapier_context: Res<RapierContext>,
     mut set: ParamSet<(
         Query<(&mut Tile, &Position, &Transform)>,
@@ -30,13 +29,14 @@ fn get_viewshed(
     mut query_player: Query<(&Position, &Transform, &mut Viewshed), With<Player>>,
     map: Res<Map>,
 ) {
+    println!("getting viewshed");
     let (player_pos, player_transform, mut player_viewshed) =
         query_player.get_single_mut().unwrap();
     player_viewshed.visible_tiles.clear();
     let player_transform_x = player_transform.translation.x;
     let player_transform_y = player_transform.translation.y;
 
-    let player_tile_ent = map.tiles[get_tile_idx((player_pos.x, player_pos.y))];
+    let player_tile_ent = map.tiles[get_tile_idx(player_pos.x, player_pos.y)];
 
     for (mut tile, _pos, _trans) in set.p0().iter_mut() {
         match tile.visibletype {
@@ -81,7 +81,7 @@ fn cast_ray(
     tile_x: f32,
     tile_y: f32,
     player_tile_ent: Entity,
-    mut custom_query: Query<(&mut Tile, &Position)>,
+    custom_query: Query<(&mut Tile, &Position)>,
 ) -> Vec<Entity> {
     let ray_origin = Vec2::new(player_x, player_y);
     let ray_dir = Vec2::new(tile_x, tile_y);
@@ -93,11 +93,6 @@ fn cast_ray(
             .get(handle)
             .is_ok_and(|tile| tile.0.tiletype == TileType::Wall)
     };
-    // let predicate2 = |handle| {
-    //     custom_query2
-    //         .get(handle)
-    //         .is_ok_and(|tile| tile.0.tiletype == TileType::Floor)
-    // };
     let filter = QueryFilter::exclude_rigid_body(n, player_tile_ent).predicate(&predicate);
     let filter2 = QueryFilter::exclude_rigid_body(n, player_tile_ent);
 
@@ -141,27 +136,14 @@ fn cast_ray(
     }
 
     visible_tiles
-
-    // let mut lowest_toi: Real = Real::MAX;
-    // let mut closest_wall: Option<Entity> = None;
-    // for (ent, intersect) in zip(intersected_tiles.clone(), tile_intersections.clone()) {
-    //     if custom_query.get(ent).unwrap().0.tiletype == TileType::Wall
-    //         && intersect.time_of_impact < lowest_toi
-    //     {
-    //         closest_wall = Some(ent);
-    //         lowest_toi = intersect.time_of_impact;
-    //     }
-    //     if let Some(ent) = closest_wall {
-    //         visible_tiles.push(ent);
-    //     }
-    // }
 }
 
-fn apply_view(
+pub fn apply_view(
     mut query_text: Query<(&mut Text, &Tile)>,
     asset_server: Res<AssetServer>,
     font_size: Res<FontSize>,
 ) {
+    println!("applying view");
     let text_style_vis = create_text_style(
         &asset_server,
         &font_size,

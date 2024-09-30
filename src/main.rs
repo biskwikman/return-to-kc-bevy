@@ -22,7 +22,7 @@ fn main() {
         }),
         ..default()
     });
-    let font_size = 10.0;
+    // let font_size = 10.0;
     App::new()
         .add_event::<Tick>()
         .add_plugins(default_plugins)
@@ -30,13 +30,12 @@ fn main() {
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
         // .add_plugins(RapierDebugRenderPlugin::default())
         .init_resource::<Map>()
-        .insert_resource(FontSize(font_size))
-        .insert_resource(TileResolution {
-            width: (window_resolution.width() / font_size) as usize,
-            height: (window_resolution.height() / font_size) as usize,
-        })
+        // .insert_resource(FontSize(font_size))
+        // .insert_resource(TileResolution {
+        //     width: (window_resolution.width() / font_size) as usize,
+        //     height: (window_resolution.height() / font_size) as usize,
+        // })
         .add_systems(PreStartup, spawn_camera)
-        .add_systems(Update, (move_player, set_player_zones.after(move_player)))
         .run();
 }
 
