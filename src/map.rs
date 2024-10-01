@@ -178,13 +178,11 @@ pub fn create_text_style(
     asset_server: &Res<AssetServer>,
     font_size: f32,
     srgba: Srgba,
-    // color: Color,
 ) -> TextStyle {
     TextStyle {
         font: asset_server.load("fonts/Mx437_IBM_BIOS.ttf"),
         font_size,
-        color: bevy::color::Color::Srgba(srgba),
-        // color,
+        color: Color::Srgba(srgba),
     }
 }
 

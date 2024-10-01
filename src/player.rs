@@ -104,13 +104,12 @@ pub fn add_player(
         font_size: map.font_size,
         ..default()
     };
-    let text_justification = JustifyText::Center;
     for (position, transform) in &mut query_tiles {
         if position.y as i32 == player_spawn_y && position.x as i32 == player_spawn_x {
             commands.spawn((
                 Text2dBundle {
                     text: Text::from_section('@', text_style.clone())
-                        .with_justify(text_justification),
+                        .with_justify(JustifyText::Center),
                     transform: Transform::from_xyz(
                         transform.translation.x,
                         transform.translation.y,

@@ -31,7 +31,6 @@ pub fn get_viewshed(
     mut query_player: Query<(&Position, &Transform, &mut Viewshed), With<Player>>,
     map: Res<Map>,
 ) {
-    println!("getting viewshed");
     let (player_pos, player_transform, mut player_viewshed) =
         query_player.get_single_mut().unwrap();
     player_viewshed.visible_tiles.clear();
@@ -145,7 +144,6 @@ pub fn apply_view(
     asset_server: Res<AssetServer>,
     map: Res<Map>,
 ) {
-    println!("applying view");
     let text_style_vis = create_text_style(
         &asset_server,
         map.font_size,
