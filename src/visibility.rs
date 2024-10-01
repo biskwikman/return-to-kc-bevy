@@ -150,20 +150,20 @@ pub fn apply_view(
         &asset_server,
         map.font_size,
         Srgba {
-            red: 60.,
-            green: 170.,
-            blue: 70.,
-            alpha: 1.,
+            red: 0.0,
+            green: 1.0,
+            blue: 0.0,
+            alpha: 1.0,
         },
     );
     let text_style_mem = create_text_style(
         &asset_server,
         map.font_size,
         Srgba {
-            red: 255.,
-            green: 255.,
-            blue: 255.,
-            alpha: 0.2,
+            red: 1.0,
+            green: 1.0,
+            blue: 1.0,
+            alpha: 0.6,
         },
     );
 

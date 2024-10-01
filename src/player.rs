@@ -99,10 +99,9 @@ pub fn add_player(
 ) {
     let (player_spawn_x, player_spawn_y) = query_rooms.get(map.rooms[0]).unwrap().1.rect.center();
     let font = asset_server.load("fonts/Mx437_IBM_BIOS.ttf");
-    let font_size = 10.0;
     let text_style = TextStyle {
         font: font.clone(),
-        font_size,
+        font_size: map.font_size,
         ..default()
     };
     let text_justification = JustifyText::Center;
@@ -115,7 +114,7 @@ pub fn add_player(
                     transform: Transform::from_xyz(
                         transform.translation.x,
                         transform.translation.y,
-                        1.0,
+                        2.0,
                     ),
                     ..default()
                 },

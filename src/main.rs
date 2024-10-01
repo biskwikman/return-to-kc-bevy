@@ -12,6 +12,7 @@ mod visibility;
 use visibility::*;
 mod events;
 use events::*;
+mod monsters;
 
 fn main() {
     let window_resolution = WindowResolution::new(800.0, 600.0);

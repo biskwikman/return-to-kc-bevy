@@ -1,6 +1,7 @@
 use crate::components::*;
 use crate::rect::*;
 use crate::resources::*;
+use bevy::color::Color;
 use bevy::color::Srgba;
 use bevy::prelude::{
     default, App, AssetServer, Commands, Entity, IntoSystemConfigs, JustifyText, ParamSet, Plugin,
@@ -177,11 +178,13 @@ pub fn create_text_style(
     asset_server: &Res<AssetServer>,
     font_size: f32,
     srgba: Srgba,
+    // color: Color,
 ) -> TextStyle {
     TextStyle {
         font: asset_server.load("fonts/Mx437_IBM_BIOS.ttf"),
         font_size,
         color: bevy::color::Color::Srgba(srgba),
+        // color,
     }
 }
 
