@@ -45,10 +45,9 @@ pub fn get_viewshed(
                 tile.visibletype = VisibleType::Memoried;
             }
             VisibleType::Memoried => {}
-            VisibleType::Obscured => {
-                tile.visibletype = VisibleType::Undiscovered;
-            }
-
+            // VisibleType::Obscured => {
+            //     tile.visibletype = VisibleType::Undiscovered;
+            // }
             _ => {}
         }
     }
@@ -174,9 +173,9 @@ pub fn apply_view(
                     text.sections = vec![TextSection::new('#', text_style_vis.clone()); 1];
                 }
             }
-            VisibleType::Obscured => {
-                text.sections = vec![TextSection::new(' ', text_style_vis.clone()); 1]
-            }
+            // VisibleType::Obscured => {
+            //     text.sections = vec![TextSection::new(' ', text_style_vis.clone()); 1]
+            // }
             VisibleType::Memoried => {
                 if tile.tiletype == TileType::Floor {
                     text.sections = vec![TextSection::new('.', text_style_mem.clone()); 1];
