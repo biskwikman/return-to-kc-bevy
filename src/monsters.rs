@@ -14,10 +14,8 @@ fn add_monsters(
     mut commands: Commands,
     query_rooms: Query<(Entity, &Room)>,
     query_transform: Query<&Transform>,
-    asset_server: Res<AssetServer>,
     map: Res<Map>,
 ) {
-    let font = asset_server.load("fonts/Mx437_IBM_BIOS.ttf");
     for (_ent, room) in query_rooms.iter().skip(1) {
         let center_tile = room.rect.center();
         let tile_ent = map.tiles[get_tile_idx(center_tile.0 as usize, center_tile.1 as usize)];
@@ -28,7 +26,7 @@ fn add_monsters(
                 text: Text::from_section(
                     'g',
                     TextStyle {
-                        font: font.clone(),
+                        font: map.font.clone(),
                         font_size: map.font_size,
                         color: Color::Srgba(Srgba {
                             red: 1.0,
@@ -50,6 +48,7 @@ fn add_monsters(
                 x: center_tile.0 as usize,
                 y: center_tile.1 as usize,
             },
+            Monster,
         ));
     }
 }
