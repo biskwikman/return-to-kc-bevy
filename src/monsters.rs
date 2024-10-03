@@ -20,6 +20,7 @@ fn add_monsters(
         let center_tile = room.rect.center();
         let tile_ent = map.tiles[get_tile_idx(center_tile.0 as usize, center_tile.1 as usize)];
         let tile_trans = query_transform.get(tile_ent).unwrap();
+        let occupied_tile = map.tiles[get_tile_idx(center_tile.0 as usize, center_tile.1 as usize)];
 
         commands.spawn((
             Text2dBundle {
@@ -32,7 +33,7 @@ fn add_monsters(
                             red: 1.0,
                             green: 0.0,
                             blue: 0.0,
-                            alpha: 1.0,
+                            alpha: 0.0,
                         }),
                     },
                 )
@@ -48,7 +49,10 @@ fn add_monsters(
                 x: center_tile.0 as usize,
                 y: center_tile.1 as usize,
             },
-            Monster,
+            Monster {
+                visibility: VisibleType::Visible,
+                occupied_tile,
+            },
         ));
     }
 }

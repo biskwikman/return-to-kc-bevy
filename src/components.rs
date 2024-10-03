@@ -21,7 +21,7 @@ pub struct Tile {
 pub enum VisibleType {
     Visible,
     Memoried,
-    Undiscovered,
+    Invisible,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -40,4 +40,7 @@ pub struct Position {
 pub struct Player;
 
 #[derive(Component)]
-pub struct Monster;
+pub struct Monster {
+    pub visibility: VisibleType,
+    pub occupied_tile: Entity,
+}

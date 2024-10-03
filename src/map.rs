@@ -4,8 +4,8 @@ use crate::resources::*;
 use bevy::color::Color;
 use bevy::color::Srgba;
 use bevy::prelude::{
-    default, App, AssetServer, Commands, Entity, IntoSystemConfigs, JustifyText, ParamSet, Plugin,
-    Query, Res, ResMut, Startup, Text, Text2dBundle, TextStyle, Transform, Vec3, Window,
+    default, App, Commands, Entity, IntoSystemConfigs, JustifyText, ParamSet, Plugin, Query,
+    ResMut, Startup, Text, Text2dBundle, TextStyle, Transform, Vec3, Window,
 };
 use bevy_rapier2d::prelude::*;
 use rand::Rng;
@@ -62,7 +62,7 @@ fn create_map(mut commands: Commands, query_window: Query<&Window>, map: ResMut<
             commands.spawn((
                 Tile {
                     tiletype: TileType::Floor,
-                    visibletype: VisibleType::Undiscovered,
+                    visibletype: VisibleType::Invisible,
                 },
                 Position { x: ix, y: iy },
                 Transform {
@@ -111,18 +111,17 @@ fn apply_map(
     query_room: Query<&Room>,
     map: ResMut<Map>,
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
 ) {
-    let text_style = create_text_style(
-        &asset_server,
-        map.font_size,
-        Srgba {
-            red: 255.,
-            green: 255.,
-            blue: 0.,
+    let text_style = TextStyle {
+        font: map.font.clone(),
+        font_size: map.font_size,
+        color: Color::Srgba(Srgba {
+            red: 1.0,
+            green: 1.0,
+            blue: 0.0,
             alpha: 0.4,
-        },
-    );
+        }),
+    };
 
     let mut rng = rand::thread_rng();
 
@@ -171,18 +170,6 @@ fn apply_map(
                 });
             }
         }
-    }
-}
-
-pub fn create_text_style(
-    asset_server: &Res<AssetServer>,
-    font_size: f32,
-    srgba: Srgba,
-) -> TextStyle {
-    TextStyle {
-        font: asset_server.load("fonts/Mx437_IBM_BIOS.ttf"),
-        font_size,
-        color: Color::Srgba(srgba),
     }
 }
 

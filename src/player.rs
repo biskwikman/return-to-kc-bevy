@@ -95,12 +95,10 @@ pub fn add_player(
     mut query_tiles: Query<(&Position, &Transform)>,
     query_rooms: Query<(Entity, &Room)>,
     map: ResMut<Map>,
-    asset_server: Res<AssetServer>,
 ) {
     let (player_spawn_x, player_spawn_y) = query_rooms.get(map.rooms[0]).unwrap().1.rect.center();
-    let font = asset_server.load("fonts/Mx437_IBM_BIOS.ttf");
     let text_style = TextStyle {
-        font: font.clone(),
+        font: map.font.clone(),
         font_size: map.font_size,
         ..default()
     };

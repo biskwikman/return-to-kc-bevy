@@ -1,13 +1,13 @@
 use crate::components::*;
-use crate::create_text_style;
 use crate::events::*;
 use crate::get_tile_idx;
 use crate::move_player;
 use crate::resources::*;
 use bevy::prelude::*;
-use std::iter::zip;
-pub struct VisibilityPlugin;
 use bevy_rapier2d::prelude::*;
+use std::iter::zip;
+
+pub struct VisibilityPlugin;
 
 impl Plugin for VisibilityPlugin {
     fn build(&self, app: &mut App) {
@@ -45,9 +45,6 @@ pub fn get_viewshed(
                 tile.visibletype = VisibleType::Memoried;
             }
             VisibleType::Memoried => {}
-            // VisibleType::Obscured => {
-            //     tile.visibletype = VisibleType::Undiscovered;
-            // }
             _ => {}
         }
     }
@@ -70,6 +67,7 @@ pub fn get_viewshed(
 
         for tile in visible_tiles {
             set.p1().get_mut(tile).unwrap().0.visibletype = VisibleType::Visible;
+            player_viewshed.visible_tiles.push(tile);
         }
     }
 }
@@ -140,30 +138,34 @@ fn cast_ray(
 
 pub fn apply_view(
     mut query_text: Query<(&mut Text, &Tile)>,
-    asset_server: Res<AssetServer>,
+    mut query_monsters: Query<(&Monster, &mut Text), Without<Tile>>,
+    query_player: Query<&Viewshed, With<Player>>,
     map: Res<Map>,
 ) {
-    let text_style_vis = create_text_style(
-        &asset_server,
-        map.font_size,
-        Srgba {
+    // TODO: These are currently instantiated every tick, wasteful, should turn them into resources
+    let text_style_vis = TextStyle {
+        font: map.font.clone(),
+        font_size: map.font_size,
+        color: Color::Srgba(Srgba {
             red: 0.0,
             green: 1.0,
             blue: 0.0,
             alpha: 1.0,
-        },
-    );
-    let text_style_mem = create_text_style(
-        &asset_server,
-        map.font_size,
-        Srgba {
+        }),
+    };
+
+    let text_style_mem = TextStyle {
+        font: map.font.clone(),
+        font_size: map.font_size,
+        color: Color::Srgba(Srgba {
             red: 1.0,
             green: 1.0,
             blue: 1.0,
             alpha: 0.6,
-        },
-    );
+        }),
+    };
 
+    // TODO: if tile is occcupied, remove '.'
     for (mut text, tile) in query_text.iter_mut() {
         match tile.visibletype {
             VisibleType::Visible => {
@@ -173,9 +175,6 @@ pub fn apply_view(
                     text.sections = vec![TextSection::new('#', text_style_vis.clone()); 1];
                 }
             }
-            // VisibleType::Obscured => {
-            //     text.sections = vec![TextSection::new(' ', text_style_vis.clone()); 1]
-            // }
             VisibleType::Memoried => {
                 if tile.tiletype == TileType::Floor {
                     text.sections = vec![TextSection::new('.', text_style_mem.clone()); 1];
@@ -184,6 +183,31 @@ pub fn apply_view(
                 }
             }
             _ => {}
+        }
+    }
+
+    // TODO: turn this into visibility type check.
+    let player_viewshed = query_player.single();
+    for (monster, mut text) in query_monsters.iter_mut() {
+        if player_viewshed
+            .visible_tiles
+            .contains(&monster.occupied_tile)
+        {
+            text.sections = vec![TextSection::new(
+                'g',
+                TextStyle {
+                    font: map.font.clone(),
+                    font_size: map.font_size,
+                    color: Color::Srgba(Srgba {
+                        red: 1.0,
+                        green: 0.0,
+                        blue: 0.0,
+                        alpha: 1.0,
+                    }),
+                },
+            )]
+        } else {
+            text.sections.clear();
         }
     }
 }
