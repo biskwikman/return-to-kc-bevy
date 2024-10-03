@@ -15,6 +15,7 @@ pub struct Room {
 pub struct Tile {
     pub tiletype: TileType,
     pub visibletype: VisibleType,
+    pub occupied: bool,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

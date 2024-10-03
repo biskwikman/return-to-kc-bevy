@@ -46,7 +46,6 @@ fn populate_map_resources(
 }
 
 fn create_map(mut commands: Commands, query_window: Query<&Window>, map: ResMut<Map>) {
-    // Create tiles
     let window = query_window.single();
     let y_max = window.resolution.height() / 2.0;
     let y_min = window.resolution.height() / -2.0 + map.font_size / 2.0;
@@ -63,6 +62,7 @@ fn create_map(mut commands: Commands, query_window: Query<&Window>, map: ResMut<
                 Tile {
                     tiletype: TileType::Floor,
                     visibletype: VisibleType::Invisible,
+                    occupied: false,
                 },
                 Position { x: ix, y: iy },
                 Transform {
@@ -118,8 +118,8 @@ fn apply_map(
         color: Color::Srgba(Srgba {
             red: 1.0,
             green: 1.0,
-            blue: 0.0,
-            alpha: 0.4,
+            blue: 1.0,
+            alpha: 0.0,
         }),
     };
 
@@ -147,7 +147,7 @@ fn apply_map(
         match tile.tiletype {
             TileType::Wall => {
                 commands.entity(ent).insert(Text2dBundle {
-                    text: Text::from_section(' ', text_style.clone())
+                    text: Text::from_section('#', text_style.clone())
                         .with_justify(JustifyText::Center),
                     transform: Transform::from_xyz(
                         transform.translation.x,
@@ -159,7 +159,7 @@ fn apply_map(
             }
             TileType::Floor => {
                 commands.entity(ent).insert(Text2dBundle {
-                    text: Text::from_section(' ', text_style.clone())
+                    text: Text::from_section('.', text_style.clone())
                         .with_justify(JustifyText::Center),
                     transform: Transform::from_xyz(
                         transform.translation.x,

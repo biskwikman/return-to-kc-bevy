@@ -28,7 +28,7 @@ impl FromWorld for Map {
             tiles: Vec::new(),
             rooms: Vec::new(),
             font_size,
-            font,
+            font: font.clone(),
             tile_res: TileResolution {
                 height: map_height as usize,
                 width: map_width as usize,

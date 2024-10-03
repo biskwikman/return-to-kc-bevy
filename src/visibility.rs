@@ -142,44 +142,22 @@ pub fn apply_view(
     query_player: Query<&Viewshed, With<Player>>,
     map: Res<Map>,
 ) {
-    // TODO: These are currently instantiated every tick, wasteful, should turn them into resources
-    let text_style_vis = TextStyle {
-        font: map.font.clone(),
-        font_size: map.font_size,
-        color: Color::Srgba(Srgba {
-            red: 0.0,
-            green: 1.0,
-            blue: 0.0,
-            alpha: 1.0,
-        }),
-    };
-
-    let text_style_mem = TextStyle {
-        font: map.font.clone(),
-        font_size: map.font_size,
-        color: Color::Srgba(Srgba {
-            red: 1.0,
-            green: 1.0,
-            blue: 1.0,
-            alpha: 0.6,
-        }),
-    };
-
-    // TODO: if tile is occcupied, remove '.'
     for (mut text, tile) in query_text.iter_mut() {
         match tile.visibletype {
             VisibleType::Visible => {
-                if tile.tiletype == TileType::Floor {
-                    text.sections = vec![TextSection::new('.', text_style_vis.clone()); 1];
+                if tile.tiletype == TileType::Floor && tile.occupied == false {
+                    text.sections[0].style.color = Color::srgba(0.0, 1.0, 0.0, 1.0);
+                } else if tile.tiletype == TileType::Floor && tile.occupied == true {
+                    text.sections[0].style.color = Color::srgba(0.0, 1.0, 0.0, 0.0);
                 } else {
-                    text.sections = vec![TextSection::new('#', text_style_vis.clone()); 1];
+                    text.sections[0].style.color = Color::srgba(0.0, 1.0, 0.0, 1.0);
                 }
             }
             VisibleType::Memoried => {
                 if tile.tiletype == TileType::Floor {
-                    text.sections = vec![TextSection::new('.', text_style_mem.clone()); 1];
+                    text.sections[0].style.color = Color::srgba(1.0, 1.0, 1.0, 0.5);
                 } else {
-                    text.sections = vec![TextSection::new('#', text_style_mem.clone()); 1];
+                    text.sections[0].style.color = Color::srgba(1.0, 1.0, 1.0, 0.5);
                 }
             }
             _ => {}
@@ -193,21 +171,9 @@ pub fn apply_view(
             .visible_tiles
             .contains(&monster.occupied_tile)
         {
-            text.sections = vec![TextSection::new(
-                'g',
-                TextStyle {
-                    font: map.font.clone(),
-                    font_size: map.font_size,
-                    color: Color::Srgba(Srgba {
-                        red: 1.0,
-                        green: 0.0,
-                        blue: 0.0,
-                        alpha: 1.0,
-                    }),
-                },
-            )]
+            text.sections[0].style.color = Color::srgba(1.0, 0.0, 0.0, 1.0);
         } else {
-            text.sections.clear();
+            text.sections[0].style.color = Color::srgba(1.0, 0.0, 0.0, 0.0);
         }
     }
 }
