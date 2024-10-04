@@ -62,7 +62,7 @@ fn create_map(mut commands: Commands, query_window: Query<&Window>, map: ResMut<
                 Tile {
                     tiletype: TileType::Floor,
                     visibletype: VisibleType::Invisible,
-                    occupied: false,
+                    // occupied: false,
                 },
                 Position { x: ix, y: iy },
                 Transform {

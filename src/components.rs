@@ -15,7 +15,6 @@ pub struct Room {
 pub struct Tile {
     pub tiletype: TileType,
     pub visibletype: VisibleType,
-    pub occupied: bool,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -42,6 +41,8 @@ pub struct Player;
 
 #[derive(Component)]
 pub struct Monster {
-    pub visibility: VisibleType,
     pub occupied_tile: Entity,
 }
+
+#[derive(Component)]
+pub struct Occupied;

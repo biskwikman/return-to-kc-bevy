@@ -137,26 +137,40 @@ fn cast_ray(
 }
 
 pub fn apply_view(
-    mut query_text: Query<(&mut Text, &Tile)>,
-    mut query_monsters: Query<(&Monster, &mut Text), Without<Tile>>,
+    mut query_monsters: Query<(&Monster, &mut Visibility)>,
+    mut query_occupied: Query<(&mut Tile, &mut Text), With<Occupied>>,
+    mut query_unoccupied: Query<(&mut Tile, &mut Text), Without<Occupied>>,
     query_player: Query<&Viewshed, With<Player>>,
-    map: Res<Map>,
 ) {
-    for (mut text, tile) in query_text.iter_mut() {
+    for (tile, mut text) in query_occupied.iter_mut() {
         match tile.visibletype {
             VisibleType::Visible => {
-                if tile.tiletype == TileType::Floor && tile.occupied == false {
-                    text.sections[0].style.color = Color::srgba(0.0, 1.0, 0.0, 1.0);
-                } else if tile.tiletype == TileType::Floor && tile.occupied == true {
+                if tile.tiletype == TileType::Floor {
                     text.sections[0].style.color = Color::srgba(0.0, 1.0, 0.0, 0.0);
-                } else {
+                }
+            }
+            VisibleType::Memoried => {
+                if tile.tiletype == TileType::Floor {
+                    text.sections[0].style.color = Color::srgba(1.0, 1.0, 1.0, 5.0);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    for (tile, mut text) in query_unoccupied.iter_mut() {
+        match tile.visibletype {
+            VisibleType::Visible => {
+                if tile.tiletype == TileType::Floor {
+                    text.sections[0].style.color = Color::srgba(0.0, 1.0, 0.0, 1.0);
+                } else if tile.tiletype == TileType::Wall {
                     text.sections[0].style.color = Color::srgba(0.0, 1.0, 0.0, 1.0);
                 }
             }
             VisibleType::Memoried => {
                 if tile.tiletype == TileType::Floor {
                     text.sections[0].style.color = Color::srgba(1.0, 1.0, 1.0, 0.5);
-                } else {
+                } else if tile.tiletype == TileType::Wall {
                     text.sections[0].style.color = Color::srgba(1.0, 1.0, 1.0, 0.5);
                 }
             }
@@ -164,16 +178,15 @@ pub fn apply_view(
         }
     }
 
-    // TODO: turn this into visibility type check.
     let player_viewshed = query_player.single();
-    for (monster, mut text) in query_monsters.iter_mut() {
+    for (monster, mut visibility) in query_monsters.iter_mut() {
         if player_viewshed
             .visible_tiles
             .contains(&monster.occupied_tile)
         {
-            text.sections[0].style.color = Color::srgba(1.0, 0.0, 0.0, 1.0);
+            *visibility = Visibility::Visible;
         } else {
-            text.sections[0].style.color = Color::srgba(1.0, 0.0, 0.0, 0.0);
+            *visibility = Visibility::Hidden;
         }
     }
 }
