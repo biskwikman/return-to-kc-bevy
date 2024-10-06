@@ -151,7 +151,7 @@ pub fn apply_view(
             }
             VisibleType::Memoried => {
                 if tile.tiletype == TileType::Floor {
-                    text.sections[0].style.color = Color::srgba(1.0, 1.0, 1.0, 5.0);
+                    text.sections[0].style.color = Color::srgba(1.0, 1.0, 1.0, 0.5);
                 }
             }
             _ => {}

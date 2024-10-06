@@ -52,11 +52,13 @@ fn add_monsters(
         commands.entity(occupied_tile).insert(Occupied);
         let mut rng = rand::thread_rng();
         let glyph: char;
+        let name: String;
+
         if rng.gen_range(0..2) == 1 {
-            println!("goblin");
+            name = "Goblin".to_string();
             glyph = 'g';
         } else {
-            println!("ogre");
+            name = "Ogre".to_string();
             glyph = 'o';
         }
 
@@ -89,17 +91,35 @@ fn add_monsters(
                 y: center_tile.1 as usize,
             },
             Monster { occupied_tile },
+            Name::new(name),
         ));
     }
 }
 
-fn monster_ai(mut query_monsters: Query<(&Monster, &Visibility)>) {
-    for (_monster, visibility) in query_monsters.iter_mut() {
+fn monster_ai(
+    query_monsters: Query<(&Visibility, &Name, &Position), With<Monster>>,
+    query_player: Query<&Position, With<Player>>,
+) {
+    let player_pos = query_player.get_single().unwrap();
+    for (visibility, name, position) in query_monsters.iter() {
         match visibility {
             Visibility::Visible => {
-                println!("Monster glares at you, unmoving.")
+                let angle =
+                    get_angle(player_pos.x, player_pos.y, position.x, position.y).to_degrees();
+                println!("{name} glares at you, unmoving, at an angle of {angle}.");
             }
             _ => {}
         }
     }
+}
+
+fn get_angle(
+    player_pos_x: usize,
+    player_pos_y: usize,
+    monster_pos_x: usize,
+    monster_pos_y: usize,
+) -> f32 {
+    let y = player_pos_y as f32 - monster_pos_y as f32;
+    let x = player_pos_x as f32 - monster_pos_x as f32;
+    y.atan2(x)
 }

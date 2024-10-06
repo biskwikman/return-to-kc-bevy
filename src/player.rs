@@ -124,6 +124,7 @@ pub fn add_player(
                     visible_tiles: Vec::new(),
                     range: 6,
                 },
+                Name::new("Player"),
             ));
         }
     }
