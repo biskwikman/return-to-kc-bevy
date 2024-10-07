@@ -148,6 +148,22 @@ fn monster_ai(
                     transform.translation.y = monst_y_plus1;
                     position.x = position.x - 1;
                     position.y = position.y + 1;
+                } else if (angle < -157.5 && angle > -180.0) || (angle >= 157.5 && angle <= 180.0) {
+                    transform.translation.x = monst_x_minus1;
+                    position.x = position.x - 1;
+                } else if angle < -112.5 && angle >= -157.5 {
+                    transform.translation.x = monst_x_minus1;
+                    transform.translation.y = monst_y_minus1;
+                    position.x = position.x - 1;
+                    position.y = position.y - 1;
+                } else if angle < -67.5 && angle >= -112.5 {
+                    transform.translation.y = monst_y_minus1;
+                    position.y = position.y - 1;
+                } else if angle < -22.5 && angle >= -67.5 {
+                    transform.translation.x = monst_x_plus1;
+                    transform.translation.y = monst_y_minus1;
+                    position.y = position.y - 1;
+                    position.x = position.x + 1;
                 }
             }
             _ => {}
