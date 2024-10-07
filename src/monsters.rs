@@ -97,16 +97,58 @@ fn add_monsters(
 }
 
 fn monster_ai(
-    query_monsters: Query<(&Visibility, &Name, &Position), With<Monster>>,
+    mut query_monsters: Query<
+        (&Visibility, &Name, &mut Position, &mut Transform),
+        (With<Monster>, Without<Player>),
+    >,
     query_player: Query<&Position, With<Player>>,
+    query_tile: Query<&Transform, Without<Monster>>,
+    map: Res<Map>,
 ) {
     let player_pos = query_player.get_single().unwrap();
-    for (visibility, name, position) in query_monsters.iter() {
+    for (visibility, name, mut position, mut transform) in query_monsters.iter_mut() {
+        let monst_x_plus1 = query_tile
+            .get(map.tiles[get_tile_idx(position.x + 1, position.y)])
+            .unwrap()
+            .translation
+            .x;
+        let monst_y_plus1 = query_tile
+            .get(map.tiles[get_tile_idx(position.x, position.y + 1)])
+            .unwrap()
+            .translation
+            .y;
+        let monst_x_minus1 = query_tile
+            .get(map.tiles[get_tile_idx(position.x - 1, position.y)])
+            .unwrap()
+            .translation
+            .x;
+        let monst_y_minus1 = query_tile
+            .get(map.tiles[get_tile_idx(position.x, position.y - 1)])
+            .unwrap()
+            .translation
+            .y;
         match visibility {
             Visibility::Visible => {
                 let angle =
                     get_angle(player_pos.x, player_pos.y, position.x, position.y).to_degrees();
                 println!("{name} glares at you, unmoving, at an angle of {angle}.");
+                if angle < 22.5 && angle >= -22.5 {
+                    transform.translation.x = monst_x_plus1;
+                    position.x = position.x + 1;
+                } else if angle < 67.5 && angle >= 22.5 {
+                    transform.translation.x = monst_x_plus1;
+                    transform.translation.y = monst_y_plus1;
+                    position.x = position.x + 1;
+                    position.y = position.y + 1;
+                } else if angle < 112.5 && angle >= 67.5 {
+                    transform.translation.y = monst_y_plus1;
+                    position.y = position.y + 1;
+                } else if angle < 157.5 && angle >= 112.5 {
+                    transform.translation.x = monst_x_minus1;
+                    transform.translation.y = monst_y_plus1;
+                    position.x = position.x - 1;
+                    position.y = position.y + 1;
+                }
             }
             _ => {}
         }
