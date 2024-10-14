@@ -1,7 +1,5 @@
-use crate::apply_view;
 use crate::components::*;
 use crate::events::*;
-use crate::get_viewshed;
 use crate::map::*;
 use crate::resources::*;
 use bevy::prelude::*;
@@ -10,22 +8,9 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            PostStartup,
-            (
-                add_player,
-                do_initial_tick.after(add_player),
-                get_viewshed.after(do_initial_tick),
-                apply_view.after(get_viewshed),
-            ),
-        )
-        .add_systems(Update, move_player);
+        app.add_systems(PostStartup, add_player)
+            .add_systems(Update, move_player);
     }
-}
-
-fn do_initial_tick(mut events: EventWriter<Tick>) {
-    println!("tick");
-    events.send(Tick);
 }
 
 pub fn move_player(

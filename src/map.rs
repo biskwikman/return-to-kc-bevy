@@ -1,11 +1,14 @@
 use crate::components::*;
+use crate::events::*;
+use crate::monsters::*;
 use crate::rect::*;
 use crate::resources::*;
 use bevy::color::Color;
 use bevy::color::Srgba;
 use bevy::prelude::{
-    default, App, Commands, Entity, IntoSystemConfigs, JustifyText, ParamSet, Plugin, Query,
-    ResMut, Startup, Text, Text2dBundle, TextStyle, Transform, Vec3, Window,
+    default, on_event, App, Commands, Entity, IntoSystemConfigs, JustifyText, ParamSet, Plugin,
+    Query, Res, ResMut, Startup, Text, Text2dBundle, TextStyle, Transform, Update, Vec3, Window,
+    With,
 };
 use bevy_rapier2d::prelude::*;
 use rand::Rng;
@@ -22,8 +25,43 @@ impl Plugin for MapPlugin {
                 populate_map_resources.before(apply_map),
                 create_map.before(populate_map_resources),
             ),
+        )
+        .add_systems(
+            Update,
+            populate_blocked
+                .before(monster_ai)
+                .run_if(on_event::<Tick>()),
         );
     }
+}
+
+fn populate_blocked(
+    mut query_tiles: Query<&mut Tile>,
+    query_monsters: Query<&Monster>,
+    query_player_pos: Query<&Position, With<Player>>,
+    map: Res<Map>,
+) {
+    for mut tile in query_tiles.iter_mut() {
+        if tile.tiletype == TileType::Wall {
+            tile.blocked = true;
+        }
+    }
+
+    for monster in query_monsters.iter() {
+        query_tiles.get_mut(monster.occupied_tile).unwrap().blocked = true;
+    }
+
+    for mut tile in query_tiles.iter_mut() {
+        if tile.blocked == true {
+            tile.blocked = false;
+        }
+    }
+
+    let player_pos = query_player_pos.single();
+    query_tiles
+        .get_mut(map.tiles[get_tile_idx(player_pos.x as usize, player_pos.y as usize)])
+        .unwrap()
+        .blocked = true;
 }
 
 pub fn get_tile_idx(idx_x: usize, idx_y: usize) -> usize {
@@ -62,7 +100,7 @@ fn create_map(mut commands: Commands, query_window: Query<&Window>, map: ResMut<
                 Tile {
                     tiletype: TileType::Floor,
                     visibletype: VisibleType::Invisible,
-                    // occupied: false,
+                    blocked: false,
                 },
                 Position { x: ix, y: iy },
                 Transform {

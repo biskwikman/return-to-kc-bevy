@@ -12,21 +12,26 @@ impl Plugin for MonsterPlugin {
         app.add_systems(
             Update,
             (
-                // unset_occupied_tiles.before(set_occupied_tiles),
+                unset_occupied_tiles
+                    .before(set_occupied_tiles)
+                    .run_if(on_event::<Tick>()),
                 set_occupied_tiles.run_if(on_event::<Tick>()),
-                monster_ai.run_if(on_event::<Tick>()),
+                monster_ai
+                    .before(set_occupied_tiles)
+                    .after(unset_occupied_tiles)
+                    .run_if(on_event::<Tick>()),
             ),
         );
     }
 }
 
-// fn unset_occupied_tiles(mut commands: Commands, query_occupied: Query<Entity, With<Occupied>>) {
-//     for tile_ent in query_occupied.iter() {
-//         commands.entity(tile_ent).remove::<Occupied>();
-//     }
-// }
+pub fn unset_occupied_tiles(mut commands: Commands, query_occupied: Query<Entity, With<Occupied>>) {
+    for tile_ent in query_occupied.iter() {
+        commands.entity(tile_ent).remove::<Occupied>();
+    }
+}
 
-fn set_occupied_tiles(
+pub fn set_occupied_tiles(
     map: Res<Map>,
     mut commands: Commands,
     mut query_monster: Query<(&mut Monster, &Position)>,
@@ -96,17 +101,18 @@ fn add_monsters(
     }
 }
 
-fn monster_ai(
+pub fn monster_ai(
     mut query_monsters: Query<
-        (&Visibility, &Name, &mut Position, &mut Transform),
+        (&Visibility, &mut Position, &mut Transform),
         (With<Monster>, Without<Player>),
     >,
     query_player: Query<&Position, With<Player>>,
     query_tile: Query<&Transform, Without<Monster>>,
+    query_tile2: Query<&Tile>,
     map: Res<Map>,
 ) {
     let player_pos = query_player.get_single().unwrap();
-    for (visibility, name, mut position, mut transform) in query_monsters.iter_mut() {
+    for (visibility, mut position, mut transform) in query_monsters.iter_mut() {
         let monst_x_plus1 = query_tile
             .get(map.tiles[get_tile_idx(position.x + 1, position.y)])
             .unwrap()
@@ -131,10 +137,16 @@ fn monster_ai(
             Visibility::Visible => {
                 let angle =
                     get_angle(player_pos.x, player_pos.y, position.x, position.y).to_degrees();
-                println!("{name} glares at you, unmoving, at an angle of {angle}.");
                 if angle < 22.5 && angle >= -22.5 {
-                    transform.translation.x = monst_x_plus1;
-                    position.x = position.x + 1;
+                    if query_tile2
+                        .get(map.tiles[get_tile_idx(position.x + 1, position.y)])
+                        .unwrap()
+                        .blocked
+                        == false
+                    {
+                        transform.translation.x = monst_x_plus1;
+                        position.x = position.x + 1;
+                    }
                 } else if angle < 67.5 && angle >= 22.5 {
                     transform.translation.x = monst_x_plus1;
                     transform.translation.y = monst_y_plus1;
@@ -168,6 +180,25 @@ fn monster_ai(
             }
             _ => {}
         }
+    }
+}
+
+fn try_move_monster(
+    position_x: usize,
+    position_y: usize,
+    map: Res<Map>,
+    query_tile: Query<&Tile>,
+    query_tile_transform: Query<&Transform, Without<Monster>>,
+    monster_transform: Mut<Transform>,
+) {
+    if query_tile
+        .get(map.tiles[get_tile_idx(position_x, position_y)])
+        .unwrap()
+        .blocked
+        == false
+    {
+        transform.translation.x = monst_x_plus1;
+        position.x = position.x + 1;
     }
 }
 

@@ -1,6 +1,8 @@
+use crate::add_player;
 use crate::components::*;
 use crate::events::*;
 use crate::get_tile_idx;
+use crate::monsters::set_occupied_tiles;
 use crate::move_player;
 use crate::resources::*;
 use bevy::prelude::*;
@@ -12,12 +14,20 @@ pub struct VisibilityPlugin;
 impl Plugin for VisibilityPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
+            PostUpdate,
+            (
+                get_viewshed,
+                apply_view.after(get_viewshed).after(add_player),
+            ),
+        )
+        .add_systems(
             Update,
             (
                 get_viewshed.run_if(on_event::<Tick>()),
                 apply_view.after(get_viewshed).run_if(on_event::<Tick>()),
             )
-                .after(move_player),
+                .after(move_player)
+                .after(set_occupied_tiles),
         );
     }
 }
@@ -178,6 +188,7 @@ pub fn apply_view(
         }
     }
 
+    // Monster Visibility
     let player_viewshed = query_player.single();
     for (monster, mut visibility) in query_monsters.iter_mut() {
         if player_viewshed
