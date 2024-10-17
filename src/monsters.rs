@@ -138,15 +138,23 @@ pub fn monster_ai(
                 let angle =
                     get_angle(player_pos.x, player_pos.y, position.x, position.y).to_degrees();
                 if angle < 22.5 && angle >= -22.5 {
-                    if query_tile2
-                        .get(map.tiles[get_tile_idx(position.x + 1, position.y)])
-                        .unwrap()
-                        .blocked
-                        == false
-                    {
-                        transform.translation.x = monst_x_plus1;
-                        position.x = position.x + 1;
-                    }
+                    // if query_tile2
+                    //     .get(map.tiles[get_tile_idx(position.x + 1, position.y)])
+                    //     .unwrap()
+                    //     .blocked
+                    //     == false
+                    // {
+                    //     transform.translation.x = monst_x_plus1;
+                    //     position.x = position.x + 1;
+                    // }
+                    try_move_monster(
+                        position.x + 1,
+                        position.y,
+                        map,
+                        query_tile2,
+                        query_tile,
+                        transform,
+                    )
                 } else if angle < 67.5 && angle >= 22.5 {
                     transform.translation.x = monst_x_plus1;
                     transform.translation.y = monst_y_plus1;
@@ -190,6 +198,8 @@ fn try_move_monster(
     query_tile: Query<&Tile>,
     query_tile_transform: Query<&Transform, Without<Monster>>,
     monster_transform: Mut<Transform>,
+    new_x: f32,
+    new_y: f32,
 ) {
     if query_tile
         .get(map.tiles[get_tile_idx(position_x, position_y)])
@@ -197,7 +207,7 @@ fn try_move_monster(
         .blocked
         == false
     {
-        transform.translation.x = monst_x_plus1;
+        monster_transform.translation.x = new_x;
         position.x = position.x + 1;
     }
 }
