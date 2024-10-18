@@ -137,53 +137,95 @@ pub fn monster_ai(
             Visibility::Visible => {
                 let angle =
                     get_angle(player_pos.x, player_pos.y, position.x, position.y).to_degrees();
+                println!("{angle}");
                 if angle < 22.5 && angle >= -22.5 {
-                    // if query_tile2
-                    //     .get(map.tiles[get_tile_idx(position.x + 1, position.y)])
-                    //     .unwrap()
-                    //     .blocked
-                    //     == false
-                    // {
-                    //     transform.translation.x = monst_x_plus1;
-                    //     position.x = position.x + 1;
-                    // }
-                    try_move_monster(
-                        position.x + 1,
-                        position.y,
-                        map,
-                        query_tile2,
-                        query_tile,
-                        transform,
-                    )
+                    if query_tile2
+                        .get(map.tiles[get_tile_idx(position.x + 1, position.y)])
+                        .unwrap()
+                        .blocked
+                        == false
+                    {
+                        transform.translation.x = monst_x_plus1;
+                        position.x = position.x + 1;
+                    }
                 } else if angle < 67.5 && angle >= 22.5 {
-                    transform.translation.x = monst_x_plus1;
-                    transform.translation.y = monst_y_plus1;
-                    position.x = position.x + 1;
-                    position.y = position.y + 1;
+                    if query_tile2
+                        .get(map.tiles[get_tile_idx(position.x + 1, position.y + 1)])
+                        .unwrap()
+                        .blocked
+                        == false
+                    {
+                        transform.translation.x = monst_x_plus1;
+                        transform.translation.y = monst_y_plus1;
+                        position.x = position.x + 1;
+                        position.y = position.y + 1;
+                    }
                 } else if angle < 112.5 && angle >= 67.5 {
-                    transform.translation.y = monst_y_plus1;
-                    position.y = position.y + 1;
+                    if query_tile2
+                        .get(map.tiles[get_tile_idx(position.x, position.y + 1)])
+                        .unwrap()
+                        .blocked
+                        == false
+                    {
+                        transform.translation.y = monst_y_plus1;
+                        position.y = position.y + 1;
+                    }
                 } else if angle < 157.5 && angle >= 112.5 {
-                    transform.translation.x = monst_x_minus1;
-                    transform.translation.y = monst_y_plus1;
-                    position.x = position.x - 1;
-                    position.y = position.y + 1;
+                    if query_tile2
+                        .get(map.tiles[get_tile_idx(position.x - 1, position.y + 1)])
+                        .unwrap()
+                        .blocked
+                        == false
+                    {
+                        transform.translation.x = monst_x_minus1;
+                        transform.translation.y = monst_y_plus1;
+                        position.x = position.x - 1;
+                        position.y = position.y + 1;
+                    }
                 } else if (angle < -157.5 && angle > -180.0) || (angle >= 157.5 && angle <= 180.0) {
-                    transform.translation.x = monst_x_minus1;
-                    position.x = position.x - 1;
+                    if query_tile2
+                        .get(map.tiles[get_tile_idx(position.x - 1, position.y)])
+                        .unwrap()
+                        .blocked
+                        == false
+                    {
+                        transform.translation.x = monst_x_minus1;
+                        position.x = position.x - 1;
+                    }
                 } else if angle < -112.5 && angle >= -157.5 {
-                    transform.translation.x = monst_x_minus1;
-                    transform.translation.y = monst_y_minus1;
-                    position.x = position.x - 1;
-                    position.y = position.y - 1;
+                    if query_tile2
+                        .get(map.tiles[get_tile_idx(position.x - 1, position.y - 1)])
+                        .unwrap()
+                        .blocked
+                        == false
+                    {
+                        transform.translation.x = monst_x_minus1;
+                        transform.translation.y = monst_y_minus1;
+                        position.x = position.x - 1;
+                        position.y = position.y - 1;
+                    }
                 } else if angle < -67.5 && angle >= -112.5 {
-                    transform.translation.y = monst_y_minus1;
-                    position.y = position.y - 1;
+                    if query_tile2
+                        .get(map.tiles[get_tile_idx(position.x, position.y - 1)])
+                        .unwrap()
+                        .blocked
+                        == false
+                    {
+                        transform.translation.y = monst_y_minus1;
+                        position.y = position.y - 1;
+                    }
                 } else if angle < -22.5 && angle >= -67.5 {
-                    transform.translation.x = monst_x_plus1;
-                    transform.translation.y = monst_y_minus1;
-                    position.y = position.y - 1;
-                    position.x = position.x + 1;
+                    if query_tile2
+                        .get(map.tiles[get_tile_idx(position.x + 1, position.y - 1)])
+                        .unwrap()
+                        .blocked
+                        == false
+                    {
+                        transform.translation.x = monst_x_plus1;
+                        transform.translation.y = monst_y_minus1;
+                        position.y = position.y - 1;
+                        position.x = position.x + 1;
+                    }
                 }
             }
             _ => {}
@@ -191,26 +233,26 @@ pub fn monster_ai(
     }
 }
 
-fn try_move_monster(
-    position_x: usize,
-    position_y: usize,
-    map: Res<Map>,
-    query_tile: Query<&Tile>,
-    query_tile_transform: Query<&Transform, Without<Monster>>,
-    monster_transform: Mut<Transform>,
-    new_x: f32,
-    new_y: f32,
-) {
-    if query_tile
-        .get(map.tiles[get_tile_idx(position_x, position_y)])
-        .unwrap()
-        .blocked
-        == false
-    {
-        monster_transform.translation.x = new_x;
-        position.x = position.x + 1;
-    }
-}
+// fn try_move_monster(
+//     position_x: usize,
+//     position_y: usize,
+//     map: Res<Map>,
+//     query_tile: Query<&Tile>,
+//     query_tile_transform: Query<&Transform, Without<Monster>>,
+//     monster_transform: Mut<Transform>,
+//     new_x: f32,
+//     new_y: f32,
+// ) {
+//     if query_tile
+//         .get(map.tiles[get_tile_idx(position_x, position_y)])
+//         .unwrap()
+//         .blocked
+//         == false
+//     {
+//         monster_transform.translation.x = new_x;
+//         position.x = position.x + 1;
+//     }
+// }
 
 fn get_angle(
     player_pos_x: usize,

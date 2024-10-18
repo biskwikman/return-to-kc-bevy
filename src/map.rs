@@ -1,6 +1,7 @@
 use crate::components::*;
 use crate::events::*;
 use crate::monsters::*;
+use crate::move_player;
 use crate::rect::*;
 use crate::resources::*;
 use bevy::color::Color;
@@ -30,6 +31,7 @@ impl Plugin for MapPlugin {
             Update,
             populate_blocked
                 .before(monster_ai)
+                .after(move_player)
                 .run_if(on_event::<Tick>()),
         );
     }
@@ -41,6 +43,13 @@ fn populate_blocked(
     query_player_pos: Query<&Position, With<Player>>,
     map: Res<Map>,
 ) {
+    // This is problem
+    for mut tile in query_tiles.iter_mut() {
+        if tile.blocked == true {
+            tile.blocked = false;
+        }
+    }
+
     for mut tile in query_tiles.iter_mut() {
         if tile.tiletype == TileType::Wall {
             tile.blocked = true;
@@ -49,12 +58,6 @@ fn populate_blocked(
 
     for monster in query_monsters.iter() {
         query_tiles.get_mut(monster.occupied_tile).unwrap().blocked = true;
-    }
-
-    for mut tile in query_tiles.iter_mut() {
-        if tile.blocked == true {
-            tile.blocked = false;
-        }
     }
 
     let player_pos = query_player_pos.single();
